@@ -1,0 +1,481 @@
+---
+title: "learning deep learning with python, module 1"
+author: "Feng Feng"
+format:
+  html:
+    code-fold: false
+    embed-resources: false
+    html-math-method: mathjax
+jupyter: python3
+---
+
+## try python LLM mode in line
+
+Prerequisite for openai chatbox:
+
++ install "aisetup" package
+     
+     !uv add aisetup 
+
++ need to go to https://platform.openai.com/api-keys to get an api key (Yes, you can get one with a free
+account)
+
++ save the api-key to the ".env" file.
+
+        OPENAI_API_KEY=sk-your-key-here
+
++ need to authenticate 
+```{python library}
+
+from aisetup import get_llm_response, authenticate
+
+#try it now
+
+prompt = f"what is a macrophage cell?"
+
+#authenticate()
+print(get_llm_response(prompt))
+
+
+```
+
+Open AI api
+
+the following is from the course on deeplearning.ai 
+
+
+    def get_llm_response(prompt):
+        completion = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+        {
+        "role": "system",
+        "content": "You are a helpful but terse AI assistant who gets straight to the point.",
+        },
+        {"role": "user", "content": prompt},
+        ],
+        temperature=0.0,
+        )
+        response = completion.choices[0].message.content
+    return response
+
+
+Then to run, we also do
+
+    load_dotenv('.env', override=True)
+    openai_api_key = os.getenv('OPENAI_API_KEY')
+    client = OpenAI(api_key = openai_api_key)
+
+that is pretty much.
+
+
+# Run model to ask questions
+
+Here, we just instantiate the model and use it to ask questions.
+
+
+```{python asking}
+
+
+#try it now
+
+prompt = f""" what does this do in python,
+
+%matplotlib widget
+?
+
+Can you also show me some code example?
+"""
+
+
+#authenticate()
+print(get_llm_response(prompt))
+
+
+
+```
+
+Run the example from chatbox
+
+```{python interactive_plot}
+# First, ensure you have the necessary packages installed
+# !pip install ipympl
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+# Use the magic command
+%matplotlib widget
+
+# Create some data
+x = np.linspace(0, 10, 100)
+y = np.sin(x)
+
+# Create an interactive plot
+plt.figure()#create a new plot area???
+plt.plot(x, y)
+plt.title('Interactive Sine Wave')
+plt.xlabel('X-axis')
+plt.ylabel('Y-axis')
+plt.show()
+```
+
+# Try fit linear regression with scikit-learn
+
+Try to use different regressor to do fitting
+
+- linear regression (from google ai example)
+
+- SGDregressor (gradient descent regression)
+
+
+```{python linear}
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error, r2_score
+
+np.random.seed(0)
+
+X=2*np.random.rand(100*2, 1)
+
+print(f"random sample started as a shape of {X.shape}")
+
+#reshape it to 2 X
+X=X.reshape(100,2)
+
+
+print(f"random sample after reshaping as a shape of {X.shape}")
+
+print(f"show the first 20 samples {X[:20,]}")
+
+#change the values of second x
+
+X[:,1]= 3.5* X[:,1]
+
+#generate y with a linear model
+p=np.array([1.7,25])
+y=3+np.dot(X, p) +np.random.randn(100,)
+
+#see what y is 
+
+print(f"after multiplication y is {y.shape}")
+
+#split data into training and testing sets
+X_train, X_test, y_train, y_test=train_test_split(X,y,test_size=0.2)
+
+#run first the linear model,
+model=LinearRegression()
+
+model.fit(X_train, y_train)
+
+print(model)
+
+print(model.coef_)
+
+print(model.intercept_)
+
+#do predication
+y_pred=model.predict(X_test)
+
+#show performances
+
+msd=mean_squared_error(y_test, y_pred)
+
+r2=r2_score(y_test, y_pred)
+
+
+print(f"mse:{msd:.2f}; r2 score:{r2:.2f}")
+
+#visualize the results
+
+#plt.scatter(X_test, y_test, color="black")
+
+
+```
+
+now try the same set of data with a different type of regressor
+
+```{python sgd}
+from sklearn.linear_model import SGDRegressor
+model2=SGDRegressor()
+model2.fit(X_train, y_train)
+
+print(model2)
+
+
+#print output
+
+print(model2.intercept_)
+
+print(model2.coef_)
+```
+
+## running examples for logistic regress 
+
+ref: the machine learn Andrew Ang class
+
+Aim to get more familiar of the python coding, including np and matplotlib.
+
+### first, the regular way. implementing gradient decent
+
+```{python logistic_1}
+
+import copy, math
+import numpy as np
+import matplotlib.pyplot as plt
+
+X_train = np.array([[0.5, 1.5], [1,1], [1.5, 0.5], [3, 0.5], [2, 2], [1, 2.5]])
+y_train = np.array([0, 0, 0, 1, 1, 1])
+
+print(f"show data in X_train:{X_train}")
+print(f"X_train.shape:{X_train.shape}")
+
+```
+
+plot data points
+
+```{python plot_scatter}
+plt.figure(figsize=(4,4))
+ax=plt.subplot()
+ax.plot(X_train[:,0],X_train[:,1], color='green', marker='o', linestyle='')
+
+plt.show()
+
+```
+
+Now we want to try seaborn plotting
+
+```{python sns}
+
+import seaborn as sns
+plt.figure(figsize=(3,3))
+sns.scatterplot(x=X_train[:,0], y=X_train[:,1], style=y_train)
+# Add a title and labels
+plt.title("Scatterplot of Numpy Array", fontsize=10, fontweight='bold')
+plt.xlabel("$x_0$", fontsize=6)
+plt.ylabel("$x_1$", fontsize=6)
+plt.xticks(fontsize=3)
+plt.yticks(fontsize=3)
+
+# Add grid
+plt.grid(True, which='both', linestyle='--', linewidth=0.7)
+
+# Add a legend (if you have categories, you can specify them here)
+# For demonstration, we'll add a dummy label
+plt.legend(['Benign','Malignant'], loc='upper right', fontsize=4)
+
+plt.show()
+```
+
+seaborn reference:
+https://seaborn.pydata.org/generated/seaborn.scatterplot.html
+
+this is good and very much like ggplot in the way to specify the size, shape ,etc.
+
+Another thing is that it seems that seaborn depends on plt to show fig and clear the figure area, and set lab, size ,etc.
+
+
+
+Now let's continue.
+
+Define the function do gradient descent for logistic regression.
+
+```{python gradient}
+
+#sigmoid function first
+def sigmoid(x):
+    """
+    sigmoid function 
+
+    Args:
+      x, scalar or np.1darray(m)
+    returns
+      scalar or 1darray
+    """
+    return 1/(1+np.exp(-x))
+
+#testing the 
+
+X=np.linspace(-10,10,100)
+
+plt.figure(figsize=(5,2))
+
+sns.scatterplot(x=X, y=sigmoid(X), s=1.5,color="red",
+    marker='o')
+sns.lineplot(x=X,  y=sigmoid(X),color="green",
+linestyle="--")
+plt.xticks(size=3)
+plt.yticks(size=3)
+plt.show()
+
+
+def gradient(X, y, W, b):
+    """
+    Compute the gradient descent at 
+    each sample.
+    The equation is first derivative of the square error
+    $
+    
+    dj_dw=sum{(f(W,b)-y_i)x_i)}
+    dj_db=sum{(f(W,b)-y_i)}
+    $
+
+    Args:
+      X (ndarray(m,n)) , the input of X, m samples and n variable each
+      y, (1darray(m)) the input of y, m samples
+      W (1darray(n)), parameter array at this round
+      b, intercept at this round
+    
+    Returns:
+      dj_dw: 1darray(n)
+      dj_db: scalar
+    """
+    m,n=X.shape
+    dj_dw=np.zeros((n,))
+    dj_db=0
+
+    #calculate the dj_dw with np.array for each parameter w_i through for loops
+    for i in range(0,m): #go through each sample to get sample level error and sum till the end.
+        #print(f"Round {i}")
+        f_i= np.dot(W,X[i])+b  #the dot will do multiplication and then summation to get scalar
+        error_i=sigmoid(f_i)- y[i]
+        #print(f"\t error_i:{error_i}")
+        dj_dw=dj_dw+ error_i*X[i]
+        dj_db=dj_db+error_i
+        #print(f"\t dj_dw:{dj_dw}")
+        #print(f"\t dj_db:{dj_db}")
+        
+
+    return dj_dw/m, dj_db/m          
+
+
+# test the function
+W=np.array([1,2])
+b=3
+dw,db=gradient(X_train, y_train, W,b)
+
+
+```
+
+now use the examples in the lecture note to test the function.
+
+```{python test_logistic_gradient}
+
+X_tmp = np.array([[0.5, 1.5], [1,1], [1.5, 0.5], [3, 0.5], [2, 2], [1, 2.5]])
+y_tmp = np.array([0, 0, 0, 1, 1, 1])
+w_tmp = np.array([2.,3.])
+b_tmp = 1.
+dj_dw_tmp, dj_db_tmp = gradient(X_tmp, y_tmp, w_tmp, b_tmp)
+print(f"dj_db: {dj_db_tmp}" )
+print(f"dj_dw: {dj_dw_tmp.tolist()}" )
+
+#testing numpy array dot
+print(np.dot(X_tmp[1],W))
+print(f"X_temp[1]:{X_tmp[1]}; shape:{X_tmp[1].shape}")
+print(W.shape)
+
+print(np.dot(W,X_tmp[1]))
+
+print(W*X_tmp[1])
+```
+so far look good, next we need to write up the gradient descent
+
+```{python gradient_descent}
+
+def cost_logistic(X,y, W, b):
+    """
+    Ags:
+      X, (ndarray,(m,n))
+      y, (1darray, (m,))
+      W, (1d array(n,))
+      b, (scalar)
+    Returns:
+      loss/cost, scalar
+    """
+    loss=0
+
+    m,n=X.shape
+
+    for i in range(m):
+        f_wb_i=sigmoid(np.dot(X[i],W)+b)
+        loss_i=-1*y[i]*np.log(f_wb_i)
+        loss_i=loss_i-(1-y[i])*np.log(1-f_wb_i)
+        loss=loss+loss_i
+
+    
+    return loss
+
+#test loss function
+
+print(cost_logistic(X_tmp,y_tmp,w_tmp,b_tmp))
+
+def gradient_descent(X, y, W_ini,b_ini,
+alpha, num_it):
+    """
+    gradient descent with number of iteration to run
+
+    Args:
+      X, (ndarray, (m,n)), input X
+      y, (1darray,(m,)), input y, target
+
+      W_ini, (1darray,(n,)), starting parameter set
+      b_ini, (scalar), starting intercept of logistic linear
+
+      alpha, (scalar), learning rate
+      num_init, (scalar), learning steps
+    
+    Returns:
+
+      W_out, (1darray), optimized parameter
+      b_out, (scalar), b
+    """
+    W_cur=copy.deepcopy(W_ini)
+    b_cur=b_ini
+    for i in range(num_it):
+        dj_dw, dj_db=gradient(X,y,W_cur,b_cur)
+        
+        W_cur=W_cur- alpha*dj_dw
+        b_cur=b_cur- alpha*dj_db
+
+        J_history=cost_logistic(X, y, W_cur,b_cur)
+         # Print cost every at intervals 10 times or as many iterations if < 10
+        if i% math.ceil(num_it / 10) == 0:
+            print(f"Iteration {i:4d}: cost {J_history}   ")        
+    return W_cur, b_cur
+
+#test gradient
+
+
+w_tmp  = np.zeros_like(X_train[0])
+b_tmp  = 0.
+alph = 0.1
+iters = 10000
+
+w_out, b_out, = gradient_descent(X_train, y_train, w_tmp, b_tmp, alph, iters) 
+print(f"\nupdated parameters: w:{w_out}, b:{b_out}")
+
+
+```
+
+so far look good.
+
+Next try to do logistic regression using
+
+scikit-learn
+
+```{python scikit_lear_logistic}
+
+from sklearn.linear_model import LogisticRegression
+
+lr_model = LogisticRegression()
+lr_model.fit(X_tmp, y_tmp)
+
+y_pred = lr_model.predict(X_tmp)
+
+print("Prediction on training set:", y_pred)
+
+print("Accuracy on training set:", lr_model.score(X_tmp, y_tmp))
+
+```

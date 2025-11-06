@@ -19,3 +19,8 @@ AI Python for Beginners
 user: ffeng9@gmail.com
 passwrd: syz33222
 
+## 3rd one
+
+https://udlbook.github.io/udlbook/
+
+read the above to know more about deep learning.

@@ -1,0 +1,13 @@
+[project]
+name = "deep-learnings"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "aisetup>=0.1.9",
+    "ipympl>=0.9.8",
+    "jupyter>=1.1.1",
+    "scikit-learn>=1.7.2",
+    "seaborn>=0.13.2",
+]
