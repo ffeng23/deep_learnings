@@ -24,3 +24,8 @@ passwrd: syz33222
 https://udlbook.github.io/udlbook/
 
 read the above to know more about deep learning.
+
+
+## activate image
+<img width="800" height="400" alt="image" src="https://github.com/user-attachments/assets/526b5d41-8a5c-4a3d-9966-755f51903b0f" />
+
