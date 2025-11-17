@@ -33,3 +33,6 @@ google data science agent.!!
 
 a paper. don't know how to access it. ??
 
+## activate image
+<img width="800" height="400" alt="image" src="https://github.com/user-attachments/assets/526b5d41-8a5c-4a3d-9966-755f51903b0f" />
+
