@@ -24,3 +24,12 @@ passwrd: syz33222
 https://udlbook.github.io/udlbook/
 
 read the above to know more about deep learning.
+
+## ds-star
+
+https://research.google/blog/ds-star-a-state-of-the-art-versatile-data-science-agent/
+
+google data science agent.!! 
+
+a paper. don't know how to access it. ??
+

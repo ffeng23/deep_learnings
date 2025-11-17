@@ -1,0 +1,343 @@
+---
+title: deep learning specialization learning
+format: 
+  html:
+    code-fold: false
+    embed-resources: true
+    html-math-method: mathjax
+jupyter: python3
+---
+
+## Aim
+
+Testing and experimenting diversity measures and also familiar with python code.
+
+## Examples
+
+### Toy example 1
+
+
+
+A tiny worked example from chat gpt
+
+Suppose productive TCR-β clone counts are [90,5,5]
+
+Shannon's entropy: 
+$$
+    H= -\sum{p*log(p)}
+$$
+
+# course 
+
+This is course learning notebook for the course at 
+
+https://learn.deeplearning.ai/specializations/deep-learning/lesson/bo7ca/what-is-a-neural-network?
+
+Deep learning specialization.
+
+# Notes:
+
++ ReLU, rectified linear unit
+
+The ReLU activation function is defined as:
+
+$$
+    ReLU(x) = max(0,x)
+$$
+
+If x>0, output is x (linear pass-through).
+
+If x≤0, output is 0.
+
+It’s called rectified linear because it’s linear for positive inputs but “rectifies” (clips) negative inputs to zero.
+
+Why use ReLU in Machine Learning?
+  
+  - Non-linearity: Even though it looks simple, ReLU introduces non-linearity, allowing neural networks to learn complex patterns.
+
+  - Efficient computation: Just a max operation — very fast.
+
+  - Sparse activation: Many neurons output zero, which can improve efficiency and reduce overfitting.
+
++ DenseNet, densely connected convolutional neural network.
+
+        DenseNet, short for Densely Connected Convolutional Network, is a deep learning architecture introduced by Gao Huang et al. in 2017. It revolutionized convolutional neural networks (CNNs) by introducing a novel connectivity pattern where each layer is connected to every other layer in a feed-forward manner. Unlike traditional CNNs, where layers are sequentially connected, DenseNet ensures that each layer receives inputs from all preceding layers and passes its outputs to all subsequent layers.
+
+
+
+
+# Vecterization.
+
+      Whenever possible, avoid the explicit for loops.
+
+**numpy.dot** for 2d multiplication.
+
+      run vector or matrix enabled operation
+
+e.g., using np.exp on matrix, etc.
+
++ np.log, 
+
++ np.maxium, 
++ np.abs, 
++ v**2, 
++ 1/v, etc
+
+## vecterization example with gradient descent for logistic regression
+
+Linear component of the logistic regression.
+
+$$
+Z= W^T X+ b
+$$
+
+which is 
+
+$$
+  np.dot(W^T, X)+b
+$$
+
+Next is the sigmoid function
+
+$$
+A=\sigma(Z) 
+$$
+
+Gradient or change on each component
+first dZ
+$$
+dZ=\frac{d j}{d Z} = A-Y
+$$
+
+Gradient
+
+$$
+dw=\frac{d J}{d w}= \frac{1}{m} X \cdot dZ^T
+$$
+
+$$
+db=\frac{d J}{d b}= np.sum(\frac{1}{m} dZ)
+$$
+
+Eventually, gradient descent
+
+$$
+\begin{aligned}
+&w= w- dw \\
+&b= b- db
+\end{aligned}
+$$
+
+Note about align
+
++ using "\\" to feed a line break.
+
++ using "&" to indicate alignment position.
+
++ align vs. aligned vs. align*
+In LaTeX, the "align" environment is used for aligning multiple equations within a single block, while aligned is used for aligning equations within a larger equation.
+align: This environment is used outside of math mode and is suitable for a single equation number. It allows for multiple equations to be aligned with respect to each other. 
+
+aligned: This environment is used inside of math mode and is designed for aligning equations within a larger equation. It can be used in inline math or within a display setting. 
+
+align*: Similar to align, but it is centered with respect to the text block. 
+
+aligned with optional parameters (e.g., [t], [b]) can specify vertical alignment with respect to the surrounding content. 
+
+
+For more detailed information, you can refer to the amsmath manual or the Math Mode document.
+
+# Broadcasting of array.
+
+# Notes about the numpy array
+
+Be explicit about shape to make code transparent.
+
+```{python broadcasting}
+
+import numpy as np
+
+# DO NOT use
+X=np.random.randn(5)
+
+print(X.shape)
+
+# PLEASE USE either row vector or column vector
+
+Y=np.random.randn(5,1)
+
+Z=np.random.randn(1,5)
+
+print(f"\n\nShape for Y: {Y.shape}; for Z:{Z.shape}")
+
+#multiply
+
+print(f"Y dot Z={np.dot(Y,Z)}\n")
+
+print(f"Z dot Y={np.dot(Z,Y)}")
+
+
+
+```
+
+# Shallow neural network
+
+2-layer of network, (not counting the input layer), we have 1 hidden layer, 1 output layer. Both layers, we do, using the logistic regression as an example, computation as below
+
+
+$$
+\begin{aligned}
+    &z=\textbf{w}\cdot\textbf{x}+b \\
+    &a=\sigma(z)
+\end{aligned}
+$$
+
+
+# feedforward neural network
+
+Feedforward Neural Network (FNN) is a type of artificial neural network in which **information flows in a single direction**, i.e., from the input layer through hidden layers to the output layer without loops or feedback. It is mainly used for pattern recognition tasks like **image and speech classification**.
+
+Code example for building one such neural network with tensorflow.
+https://www.geeksforgeeks.org/deep-learning/feedforward-neural-network/
+
+   ----> to do in the future <------
+
+# one hot encoding
+
+    One-hot encoding is a method used to represent categorical data as binary vectors, making it suitable for machine learning algorithms that require numerical input. Each category is represented as a binary vector with a single 1 indicating the category's position and 0s elsewhere.
+
+For example, 
+[0,0,0,0,1,0,0,0]
+
+## Softmax function and cross-entropy loss
+
+### softmax function:
+
+it is function to map a touple z of K values, i.e., raw prediction scores (often called logits), from the neural network into probabilities.
+
+$$
+  softmax(z_i)=\frac{e^{z_i}}{\sum_{j=1}^{K}e^{z_j}}
+$$
+
+### cross-entropy loss
+
+Cross entropy loss is used in machine learning as the loss function for softmax functions. 
+
+It is a measure to quantify the difference between two probability distributions. In information theory, the cross-entropy between two probability distributions 
+p and q, over the same underlying set of events, measures the average number of bits needed to identify an event drawn from the set when the coding scheme used for the set is optimized for an estimated probability distribution q, rather than the true distribution p. The cross-entropy of the distribution 
+q relative to a distribution p over a given set is defined as follows:
+
+$$
+H(p,q)=−E_p[log(q)]
+$$
+
+where $E_p⁡[⋅]$ is the expected value operator with respect to the distribution p.
+
+The definition may be formulated using the Kullback–Leibler divergence $D_{KL}(p∥q)$, divergence of p from q (also known as the relative entropy of p with respect to q
+
+$$
+H(p,q)=H(p)+D_{KL}(p∥q)
+$$
+
+where H(p) is the entropy of p. 
+
+For discrete probability distributions p and q with the same support X, this means
+
+$$
+H(p,q)=−\sum_{x \in X}p(x)log(q(x))
+$$
+.
+
+#### type of cross-entropy loss
+
++ BCE, binary cross entropy
+
+This is the one used for binary classification, say logistic regression.
+
+$$
+  BCE=-\frac{1}{N}\sum_{i}^N(y_ilog(p_i)-(1-y_i)log(1-p_i))
+$$
+
++ multiple classification
+
+$$
+  CE= - \sum_{i}^{N}\sum_{j}^{K}(y_{i,j}\cdot log(p_{i,j}))
+$$
+
+where 
+  - N is number of samples,
+  - K is the number of classes.
+  - $y_{i,j}$ is 1 if class j is correct for sample i, 0 otherwise.
+  - $p_{i,j}$ is model-predicted probability of sample i being in class j.
+
+### entropy
+
+In information theory, the entropy of a random variable quantifies the average level of uncertainty or information associated with the variable's potential states or possible outcomes. This measures the expected amount of information needed to describe the state of the variable, considering the distribution of probabilities across all potential states. Given a discrete random variable 
+X, which may be any member x within the set X and is distributed according to $p:X \to [0,1]$, the entropy is
+
+$$
+  H(X)=−\sum_{x \in X}p(x)log(p(x))
+$$
+
+# activation function
+
+https://www.geeksforgeeks.org/machine-learning/activation-functions-neural-networks/
+
+An activation function in a neural network is a mathematical function applied to the output of a neuron. It introduces non-linearity, enabling the model to learn and represent complex data patterns. Without it, even a deep neural network would behave like a simple linear regression model.
+
+Activation functions decide whether a neuron should be activated based on the weighted sum of inputs and a bias term. They also make backpropagation possible by providing gradients for weight updates.
+
+Note: there is a activation function picture in README.md. check it out there.
+
+
+# Neural network 
+ref: https://learn.deeplearning.ai/specializations/deep-learning/lesson/slsjv/building-blocks-of-deep-neural-networks
+
+deep learning specializations
+
+
+## building block
+
+layer $l$:
+
+forward:
+
+input $a^[l-1]$, output $a^[l]$
+
+$$
+\begin{aligned}
+  &z^[l]=w\cdot a^{[l-1]}+b \\
+  &a^[l]=g^{[l]}(z^{[l]})
+\end{aligned}
+$$
+
+backward:
+input $da^{[l]}$, output $da^{[l-1]}$, $dw^{[l]}$, $db^{[l]}$
+
+propagation:
+
+$$
+\begin{aligned}
+
+dz^{[l]}=da^{[l]} * g^{[l]\prime}(z^{[l]}) \\
+
+dw^{[l]}=dz^{[l]} * (a^{[l-1])})^T \\
+
+db^{[l]}=dz^{[l]} \\
+
+da^{[l-1]}=W^{[l] T}dz^{[l]} \\
+
+dz^{[l]}=W^{[l+1] T}dz^{[l+1]} * g^{[l]\prime}(z^{[l]})
+
+\end{aligned}
+$$
+
+vectorization the propagation.
+
+see the 3 pdf in this repo for vectorization!!!!
+
+
+# IMPLEMENTATION of NN
+
+see the qmd in the same repo for the implementation.
+

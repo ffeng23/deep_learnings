@@ -1,0 +1,83 @@
+---
+title: Implementation of NN
+author: Feng, Feng
+date: 11/6/2025
+format:
+  html:
+    html-math-method: mathjax
+    code-fold: false
+    embed-resources: true
+jupyter: python3
+---
+
+# Aims
+
++ practising implementation of NN
++ deepening understanding of NN and machine learning.
+
+reference: https://dennybritz.com/posts/wildml/implementing-a-neural-network-from-scratch/
+
+# Start Implementing
+
+## Data generation.
+
+Make use of a scikit-learn function, make_moons
+
+```{python data_1}
+from sklearn import datasets 
+import numpy as np
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+np.random.seed(2025)
+
+X, Y= datasets.make_moons(200, noise=0.2)
+
+print(f"X.shape : {X.shape} and Y.shape : {Y.shape}\n")
+
+print(f"Show the data X, \n {X[1:10,:]}\n")
+
+print(f"Show the data Y: \n{Y[1:10,]}")
+
+plt.figure(figsize=(6,4))
+
+sns.scatterplot(x=X[:,0], y=X[:,1], c=Y)
+plt.show()
+
+```
+
+
+## Logistic regression as the classifier.   
+
+Try the logistic regression to classify the data for the demonstration purpose.
+
+```{python logistic}
+
+import sklearn.linear_model 
+
+clf=sklearn.linear_model.LogisticRegressionCV(random_state=20)
+
+clf.fit(X,Y)
+
+print(f"after fitting: we have {clf}")
+
+def plot_decision_boundary(pred_func, X, y):
+    # Set min and max values and give it some padding
+    x_min, x_max = X[:, 0].min() - .5, X[:, 0].max() + .5
+    y_min, y_max = X[:, 1].min() - .5, X[:, 1].max() + .5
+    h = 0.01
+    # Generate a grid of points with distance h between them
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+    # Predict the function value for the whole gid
+    Z = pred_func(np.c_[xx.ravel(), yy.ravel()])
+    Z = Z.reshape(xx.shape)
+    # Plot the contour and training examples
+    plt.contourf(xx, yy, Z, cmap=plt.cm.Spectral)
+    plt.scatter(X[:, 0], X[:, 1], c=y, cmap=plt.cm.Spectral)
+    plt.show()
+
+# Plot the decision boundary
+plot_decision_boundary(lambda x: clf.predict(x), X, Y)
+
+
+```

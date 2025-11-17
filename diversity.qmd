@@ -1,0 +1,28 @@
+---
+title: "Matplot Tutorial - 1"
+format: 
+  html:
+    code-fold: false
+    embed-resources: true
+    html-math-method: mathjax
+jupyter: python3
+---
+
+## Aim
+
+Testing and experimenting diversity measures and also familiar with python code.
+
+## Examples
+
+### Toy example 1
+
+
+
+A tiny worked example from chat gpt
+
+Suppose productive TCR-β clone counts are [90,5,5]
+
+Shannon's entropy: 
+$$
+    H= -\sum{p*log(p)}
+$$

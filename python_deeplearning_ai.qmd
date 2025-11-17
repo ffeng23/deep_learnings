@@ -4,10 +4,21 @@ author: "Feng Feng"
 format:
   html:
     code-fold: false
-    embed-resources: false
+    embed-resources: true
     html-math-method: mathjax
 jupyter: python3
 ---
+
+two courses here:
+
++ AI python for beginners.
+
+https://learn.deeplearning.ai/courses/ai-python-for-beginners/lesson/z57gn/introduction
+
++ Machine learning specicialization
+
+https://learn.deeplearning.ai/specializations/machine-learning/lesson/dhmb8/optional-lab:-gradient-descent-for-logistic-regression
+
 
 ## try python LLM mode in line
 
@@ -119,6 +130,85 @@ plt.xlabel('X-axis')
 plt.ylabel('Y-axis')
 plt.show()
 ```
+
+
+
+# Gradient descent with multiple linear regression and logistic regression
+
+## multiple linear regression
+
+Do multiple linear regression first!
+
+
+$$
+
+w_j=w_j- \alpha \frac{d J(w,b)}{d w_j}  
+
+$$
+for j=1,....,n
+
+$$
+
+b= b - \alpha \frac{d J(w,b)} {d b}
+
+$$
+
+and 
+
+$$
+
+  \frac{d J(w,b)}{d w_j} = \frac{1}{m} \sum_{i=1}^{m}(f_{w,b}(X^{(i)}) - y^{(i)})x_j
+
+$$
+
+$$
+
+  \frac{d J(w,b)}{d b} = \frac{1}{m} \sum_{i=1}^{m}(f_{w,b}(X^{(i)}) - y^{(i)})
+
+$$
+
+## logistic regression
+
+Now it is the case for logistic regression.
+
+To make it straight. Gradient descent for Logistic regression is the same as that for the linear regrssion, except that the function is sigmoid (look at the last equation down below).
+
+
+$$
+
+w_j=w_j- \alpha \frac{d J(w,b)}{d w_j}  
+
+$$
+for j=1,....,n
+
+$$
+
+b= b - \alpha \frac{d J(w,b)} {d b}
+
+$$
+
+and 
+
+$$
+
+  \frac{d J(w,b)}{d w_j} = \frac{1}{m} \sum_{i=1}^{m}(f_{w,b}(X^{(i)}) - y^{(i)})x_j
+
+$$
+
+$$
+
+  \frac{d J(w,b)}{d b} = \frac{1}{m} \sum_{i=1}^{m}(f_{w,b}(X^{(i)}) - y^{(i)})
+
+$$
+
+**Note:**, $f_{w,b}(X^{(i)})$ is the sigmoid function below,
+
+$$
+
+f_{w,b}(X^{(i)})=\frac{1}{1+e^{-(\mathbf{w}\cdot\mathbf{x}^{(i)}+b)}}
+
+$$
+
 
 # Try fit linear regression with scikit-learn
 
