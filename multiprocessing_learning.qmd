@@ -1,0 +1,254 @@
+---
+title: Learning python multiprocessing
+authoer: Feng, Feng
+date: 11/18/2025
+format: 
+  html:
+    html-math-method: mathjax
+    code-fold: false
+    embed-resources: true
+jupyter: python3
+---
+
+# Aim:
++ learning multiprocessing
++ try some code.
+
+# Multiprocessing vs. multithreading
+
+multithreading: concurrent, shared memory, one process, not real multiprocessing.
+
+multiprocessing: good use of multi-CPU and need to take care of non-shared memory to communicate.
+
+# Python code examples
+
+## Basic Process Creation:
+The fundamental way to use multiprocessing is with the Process class.
+
+```{python basic}
+import multiprocessing
+import os
+
+def worker(name):
+    
+    print(f"Worker {name} running in process ID: {os.getpid()}")
+
+p1=multiprocessing.Process(target=worker, args=('one',))
+
+
+p2=multiprocessing.Process(target=worker, args=('two',))
+
+p1.start()
+
+p2.start()
+
+p1.join()
+p2.join()
+
+print("All processess finished!!!")
+
+```
+
+Basic process: no pool, no queue, no output and no inter-process communication.
+
+
+## Using a Pool for data parallelism
+
+For applying a function to multiple items in an iterable, multiprocessing.Pool offers a more streamlined approach.
+
+```{python pool}
+import time
+#define worker
+def square(number):
+    time.sleep(2)
+    print(f"Worker with number {number} running in process ID: {os.getpid()}\n")
+    return number*number
+
+with multiprocessing.Pool(processes=4) as pool:
+    numbers=range(0,13)
+    results=pool.map(square, numbers)
+
+    print(f"squared numbers:{results}\n")
+
+print("We are done!!!\n")
+
+```
+
+Notes:
+
++ it seems that in this case, we are using the iterable to control the execution. it finishes when the iterable is out.
+
++ use "with" clause to clean up the processes.
+
++ the number of processes in the pool is produced and reused until the iterable runs out.
+
+
+## Inter-Process Communication (IPC):
+Processes have separate memory spaces, so communication requires specific mechanisms like Queues or Pipes.
+
+```{python interpc}
+
+def producer(queue):
+    for i in range(5):
+        time.sleep(3)
+        print(f"adding to queue:{i}")
+        queue.put(i)
+    
+    print("finishing the queue")
+    queue.put(None)  # Sentinel to signal end
+
+def consumer(queue):
+    while True:
+        item = queue.get()
+        if item is None:
+            break
+        print(f"Consumed: {item}")
+
+queue = multiprocessing.Queue()
+p_producer = multiprocessing.Process(target=producer, args=(queue,))
+p_consumer = multiprocessing.Process(target=consumer, args=(queue,))
+
+p_producer.start()
+p_consumer.start()
+
+p_producer.join()
+p_consumer.join()
+
+print("We are done!!!!")
+
+```
+
+In this above case, we can see 
+
++ the process will finish after the worker process function reaches the end of the function.  
+
++ we need to keep reading the queue until it is out (marked by "none")
+
++ the process put will keep checking the queue until it is filled. basically it can wait for the queue to fill. We have to use "None" to tell the consumer process to stop. 
+
+this is different from the above "second" method (Pool)
+
+## code from HEME pipeline process diffusion script
+
+We borrow the multiprocessing code from the pipeline process diffusion script
+
+```{python process}
+
+the_queue=multiprocessing.Queue()
+for i in range(9):
+    #time.sleep(3)
+    print(f"adding to queue:{i}")
+    the_queue.put(i)
+    
+    
+
+N_PROCESSES= 4
+def processer(queue):
+    while True:
+        item = queue.get()
+        if item is None:
+            print("=========*** we got a None!!!!======\n")
+            break
+        print(f"Consumed: {item}; working hard!!!\n")
+
+    print("We are done\n")
+
+
+pool = multiprocessing.Pool(processes=N_PROCESSES,
+                                initializer=processer,
+                                initargs=(the_queue, ))
+
+# None to end each process
+for _i in range(N_PROCESSES):
+    print("make sure we can finish")
+    the_queue.put(None)
+
+# Closing the queue and the pool
+the_queue.close()
+the_queue.join_thread()
+pool.close()
+pool.join()
+
+print("success!!!\n")
+    
+```
+
+#this is interesting now. 
+
+  + It seems when there is queue, python is very smart about it. I can figure out whether there are other processes are working on it to fill. (we need to confirm this (see below)). Yes, there is something called mutex/lock. that it can block (pause execution) when the queue is empty and the process is calling a get. similarly, put will block when the queue is full. It is the Queue handles the synchronization. **we need to design carefully around this "blocking" algorithm, make sure the behavior work as we intend**. No blocking for ever and no missing the work!!! 
+    - put None to the queue to signal finishing
+    - check None to quit
+    - be careful about the order of putting None and check for signal. (see below for demo)
+
+  + If no other processes are filling it, when it sees the end, it will get a "None". then if we have the code to test for "none" (see it in the function while loop.), we can decide to quit and the processes finished the job. Otherwise (there are data), the processer will give the process a job to do (inside the while loop). when the processes will finish the job and reach the end of while loop and go back to the pool and wait for being reused!!!.
+
+  this is very different from the pool map(?). In which case (python pool), the pool give the job (square) to the processes, which finish the job and reach the end of the function. After this point, the processes will go back to pool and wait for a job to do. Once the iterable is out, we are done. pool will take care to finish and close processes.
+
+
+Next test filling and consuming at the same time for pool
+
+```{python process}
+
+the_queue=multiprocessing.Queue()
+
+def filling(queue):
+    for i in range(0,6):
+        time.sleep(3)
+        print(f"adding to queue:{i}")
+        the_queue.put(i)
+    
+    the_queue.put(None)
+
+N_PROCESSES= 4
+def processer(queue):
+    while True:
+        item = queue.get()
+        if item is None:
+            print("=========*** we got a None!!!!======\n")
+            break
+        print(f"Consumed: {item}; working hard!!! in process: {os.getpid()}\n")
+
+    print("We are done\n")
+
+
+#this is the one to consume, we are using five of them
+pool = multiprocessing.Pool(processes=N_PROCESSES,
+                                initializer=processer,
+                                initargs=(the_queue, ))
+
+# this is the one to fill
+filler= multiprocessing.Process(target=filling, args=(the_queue,) )
+#eater= multiprocessing.Process(target=eating, args=(the_queue,) )
+filler.start()
+#eater.start()
+#done and clean up now.
+
+filler.join() # the filler is done.
+#eater.join()
+
+# None to end each process
+#this is important, we need to finish the consumer process after
+# the filler is done!!!
+for _i in range(N_PROCESSES):
+    print("make sure we can finish")
+    the_queue.put(None)
+
+# Closing the queue and the pool
+the_queue.close()
+the_queue.join_thread()
+pool.close()
+pool.join()
+
+
+
+
+print("success!!!\n")
+    
+```
+
+Again, need to be careful about
+
++ queue
++ order of start and finish of the processes
++ signal to finish by adding None to the queue end
++ check none on the queue to finish.

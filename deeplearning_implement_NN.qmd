@@ -81,3 +81,162 @@ plot_decision_boundary(lambda x: clf.predict(x), X, Y)
 
 
 ```
+
+## Implementation of a light-weight NN
+
+with 2 layers, one hidden layer and one output layer (2 nodes). The input layer is of two nodes (x) too.
+
+Defining the variables first,
+
+```{python variables}
+
+num_examples = len(X) # training set size
+nn_input_dim = 2 # input layer dimensionality
+nn_output_dim = 2 # output layer dimensionality
+
+# Gradient descent parameters (I picked these by hand)
+epsilon = 0.01 # learning rate for gradient descent
+reg_lambda = 0.01 # regularization strength
+
+print(f"Sample size: {num_examples}")
+
+
+```
+
+loss function
+
+```{python loss}
+
+#copy from this post
+#https://insidelearningmachines.com/cross_entropy_loss/
+# modified to fit this module
+import numpy as np
+
+def cross_entropy(model, X, y) -> float:
+    """
+    Function to compute cross entropy for distributions y_true & y_pred
+    
+    Input:
+        y_true : numpy array of true labels
+        y_pred : numpy array of model predictions
+        
+    Output:
+        scalar cross entropy value between y_true & y_pred
+    """
+    W1, b1, W2, b2 = model['W1'], model['b1'], model['W2'], model['b2']
+    # Forward propagation to calculate our predictions
+    z1 = X.dot(W1) + b1
+    a1 = np.tanh(z1)
+    z2 = a1.dot(W2) + b2
+    exp_scores = np.exp(z2)
+    probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
+
+    offset = 1e-16
+
+    # Calculating the loss
+    corect_logprobs = [-1*y_t*np.log(y_p+offset) for y_t, y_p in zip(y,probs)]
+    data_loss = np.sum(corect_logprobs)
+    # Add regulatization term to loss (optional)
+    data_loss += reg_lambda/2 * (np.sum(np.square(W1)) + np.sum(np.square(W2)))
+    return 1./num_examples * data_loss
+
+
+#in the impolementing post
+def calculate_loss(model):
+    W1, b1, W2, b2 = model['W1'], model['b1'], model['W2'], model['b2']
+    # Forward propagation to calculate our predictions
+    z1 = X.dot(W1) + b1
+    a1 = np.tanh(z1)
+    z2 = a1.dot(W2) + b2
+    exp_scores = np.exp(z2)
+    probs = exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
+    # Calculating the loss
+    corect_logprobs = -np.log(probs[range(num_examples), y])
+    data_loss = np.sum(corect_logprobs)
+    # Add regulatization term to loss (optional)
+    data_loss += reg_lambda/2 * (np.sum(np.square(W1)) + np.sum(np.square(W2)))
+    return 1./num_examples * data_loss
+
+```
+
+Now we want to deviate a little to test and get familiar with cross-entropy loss.
+
+```{python loss_test}
+
+
+def cross_entropy_test(y_true: np.array, y_pred: np.array) -> float:
+    """
+    Function to compute cross entropy for distributions y_true & y_pred
+    
+    Input:
+        y_true : numpy array of true labels
+        y_pred : numpy array of model predictions
+        
+    Output:
+        scalar cross entropy value between y_true & y_pred
+    """
+    offset = 1e-16
+    return -np.sum([y_t*np.log2(y_p + offset) for y_t,y_p in zip(y_true,y_pred)])
+
+# two class example no. 1
+y_true = np.array([1.0, 0.0, 0.0, 1.0])
+y_pred = np.array([0.8, 0.5, 0.6, 0.4])
+
+print(f'Cross Entropy for example 1 is: {cross_entropy_test(y_true,y_pred):.2f}')
+
+# sample no. 2
+y_true = np.array([1.0, 0.0, 0.0, 0.0])
+y_pred = np.array([1, 1, 1, 1])
+
+print(f'Cross Entropy for example 2 is: {cross_entropy_test(y_true,y_pred):.2f}')
+
+y_true = np.array([0.0, 0.0, 0.0, 0.0])
+y_pred = np.array([0.8, 0.5, 0.6, 0.4])
+
+print(f'Cross Entropy for example 1 is: {cross_entropy_test(y_true,y_pred):.2f}')
+
+y_true = np.array([1.0, 0.0, 0.0, 0.0])
+y_pred = np.array([0.0, 0.0, 0.0, 0.0])
+
+print(f'Cross Entropy for example 1 is: {cross_entropy_test(y_true,y_pred):.2f}')
+
+```
+
+tensor flow testing
+
+```{python tensor_test}
+
+import tensorflow as tf
+
+y_true = [[0, 1, 0], [0, 0, 1]]
+y_pred = [[0.05, 0.95, 0], [0.1, 0.8, 0.1]]
+
+cce = tf.keras.losses.CategoricalCrossentropy()
+loss = cce(y_true, y_pred)
+print(loss.numpy()) # Output: 1.177
+
+print(f"doing binary response0------------")
+y_true = [[0, 1], [ 0, 1]]
+y_pred = [[ 0.1, 0.9], [ 0.2, 0.8]]
+loss = cce(y_true, y_pred)
+print(f"all label 1 {loss.numpy()}") # Output: 1.177
+
+print("all wrong label:")
+y_true = [[0, 1], [ 0, 1]]
+y_pred = [[ 0.95, 0.05], [ 0.8, 0.2]]
+loss = cce(y_true, y_pred)
+print(loss.numpy()) # Output: 1.177
+
+type(y_true)
+
+y_true_np=np.array(y_true)
+y_pred_np=np.array(y_pred)
+
+offset=1e-16
+loss_manual=[y_t*np.log(y_p ) for y_t,y_p in zip(y_true_np,y_pred_np)]
+```
+
+Now that I understand that why in the above defined function, calculate_loss, it only calculate cross-entroyp of the y=1 cases. Because it use 1) use one-hot coding and 2) multiple class labelling. In this case, each sample has a vector of output/y, but when we do calculating, it counts everything, but only the classification of 1 matters with classification of 0 ending up to be 0= 0*log(p). 
+Remember, e.g., y=[1,0,0,0] means for this sample its label/classification is the first one, and $\hat{y}=[0.9, 0,0.1,0]$ means it predicts to be first one. In this case, cross-entropy is small. Otherwise, $\hat{y}=[0.09, 0,0.91,0]$ will have $-\sum_{i=1}^{4}y^log(\hat{y})$ to be big and equals to $-1*log(0.09)$ only.
+
+This is what tensorflow is using.!! one-hot and cross-entropy with multi-class labeling.

@@ -336,6 +336,15 @@ vectorization the propagation.
 
 see the 3 pdf in this repo for vectorization!!!!
 
+Other excellent explanation about back propogation algorithm.
+
+https://cs231n.github.io/optimization-2/
+
+
+## learning rate
+
+    We will implement the most vanilla version of gradient descent, also called batch gradient descent with a fixed learning rate. Variations such as SGD (stochastic gradient descent) or minibatch gradient descent typically perform better in practice. So if you are serious you’ll want to use one of these, and ideally you would also decay the learning rate over time.
+
 
 # IMPLEMENTATION of NN
 
