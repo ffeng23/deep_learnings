@@ -32,7 +32,7 @@ import matplotlib.pyplot as plt
 np.random.seed(2025)
 
 X, Y= datasets.make_moons(200, noise=0.2)
-
+y=Y #feng, added because I modified the original code to have Y instead of Y
 print(f"X.shape : {X.shape} and Y.shape : {Y.shape}\n")
 
 print(f"Show the data X, \n {X[1:10,:]}\n")
@@ -74,7 +74,7 @@ def plot_decision_boundary(pred_func, X, y):
     # Plot the contour and training examples
     plt.contourf(xx, yy, Z, cmap=plt.cm.Spectral)
     plt.scatter(X[:, 0], X[:, 1], c=y, cmap=plt.cm.Spectral)
-    plt.show()
+    #plt.show()
 
 # Plot the decision boundary
 plot_decision_boundary(lambda x: clf.predict(x), X, Y)
@@ -332,6 +332,10 @@ def predict(model, x):
 Build the model for NN,
 
 ```{python model}
+# Gradient descent parameters (I picked these by hand) 
+# here use global variable, might not be a good idea!!
+epsilon = 0.01 # learning rate for gradient descent 
+reg_lambda = 0.01 # regularization strength 
 
 # This function learns parameters for the neural network and returns the model.
 # - nn_hdim: Number of nodes in the hidden layer
@@ -350,7 +354,7 @@ def build_model(nn_hdim, num_passes=20000, print_loss=False):
     model = {}
     
     # Gradient descent. For each batch...
-    for i in xrange(0, num_passes):
+    for i in range(0, num_passes):
 
         # Forward propagation
         z1 = X.dot(W1) + b1
@@ -395,8 +399,37 @@ def build_model(nn_hdim, num_passes=20000, print_loss=False):
         # Optionally print the loss.
         # This is expensive because it uses the whole dataset, so we don't want to do it too often.
         if print_loss and i % 1000 == 0:
-          print "Loss after iteration %i: %f" %(i, calculate_loss(model))
+          print ("Loss after iteration %i: %f" %(i, calculate_loss(model)))
     
     return model
 
 ```
+
+
+Now lets try to run and see how it works!!!
+
+```{python run_model}
+
+# Build a model with a 3-dimensional hidden layer
+model = build_model(3, print_loss=True)
+
+
+# Plot the decision boundary
+plot_decision_boundary(lambda x: predict(model, x), X, y)
+plt.title("Decision Boundary for hidden layer size 3")
+
+
+# %% 14 
+plt.figure(figsize=(16, 32)) 
+hidden_layer_dimensions = [1, 2, 3, 4, 5, 20, 50] 
+for i, nn_hdim in enumerate(hidden_layer_dimensions): 
+    plt.subplot(5, 2, i+1) 
+    plt.title('Hidden Layer size %d' % nn_hdim) 
+    model = build_model(nn_hdim) 
+    plot_decision_boundary(lambda x: predict(model, x),X, y) 
+plt.show()
+
+```
+
+# building nn using tensorflow
+

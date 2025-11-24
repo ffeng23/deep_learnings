@@ -288,8 +288,8 @@ input $a^[l-1]$, output $a^[l]$
 
 $$
 \begin{aligned}
-  &z^[l]=w\cdot a^{[l-1]}+b \\
-  &a^[l]=g^{[l]}(z^{[l]})
+  &z^{[l]}=w\cdot a^{[l-1]}+b \\
+  &a^{[l]}=g^{[l]}(z^{[l]})
 \end{aligned}
 $$
 
@@ -303,7 +303,7 @@ $$
 
 dz^{[l]}=da^{[l]} * g^{[l]\prime}(z^{[l]}) \\
 
-dw^{[l]}=dz^{[l]} * (a^{[l-1])})^T \\
+dw^{[l]}=dz^{[l]} * (a^{[l-1]})^T \\
 
 db^{[l]}=dz^{[l]} \\
 
