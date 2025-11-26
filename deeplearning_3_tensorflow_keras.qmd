@@ -1,0 +1,21 @@
+---
+title: Deep learning part 3, 
+author: Feng, Feng
+date: 11/25/2025
+format:
+  html:
+    code-fold: false
+    html-math-method: mathjax
+    embed-resources: true
+jupyter: python3
+---
+
+Aim:
+
++ part 3, tensor flow
+
+reference: 
+
+https://www.tensorflow.org/guide/tensor
+
+https://www.tensorflow.org/tutorials/quickstart/beginner

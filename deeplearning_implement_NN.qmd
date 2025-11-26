@@ -421,7 +421,7 @@ plt.title("Decision Boundary for hidden layer size 3")
 
 # %% 14 
 plt.figure(figsize=(16, 32)) 
-hidden_layer_dimensions = [1, 2, 3, 4, 5, 20, 50] 
+hidden_layer_dimensions = [1, 2]#, 3, 4, 5, 20, 50] 
 for i, nn_hdim in enumerate(hidden_layer_dimensions): 
     plt.subplot(5, 2, i+1) 
     plt.title('Hidden Layer size %d' % nn_hdim) 
@@ -433,3 +433,316 @@ plt.show()
 
 # building nn using tensorflow
 
+https://pythonguides.com/training-neural-network-in-tensorflow/
+
+build a neural network with tensorflow to classify data.
+
+check version first,
+```{python tensor_1}
+import tensorflow as tf
+# Check TensorFlow version
+print(f"TensorFlow version: {tf.__version__}")
+print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+
+```
+
+Load data
+
+```{python tenso_adat}
+import keras
+(x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
+
+# Normalize pixel values to be between 0 and 1
+x_train, x_test = x_train / 255.0, x_test / 255.0
+
+# Build the model
+model = keras.Sequential([
+    keras.layers.Flatten(input_shape=(28, 28)),
+    keras.layers.Dense(128, activation='relu'),
+    keras.layers.Dropout(0.2),
+    keras.layers.Dense(10, activation='softmax')
+])
+
+# Compile the model
+model.compile(
+    optimizer='adam',
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+```
+
+train the model
+
+```{python train}
+
+# Train the model
+history = model.fit(
+    x_train, y_train,
+    epochs=10,
+    validation_data=(x_test, y_test)
+)
+
+# Evaluate the model
+test_loss, test_acc = model.evaluate(x_test, y_test, verbose=2)
+print(f'\nTest accuracy: {test_acc}')
+
+```
+
+visualize the fitting
+
+```{python vis}
+
+# Plot training & validation accuracy
+plt.figure(figsize=(12, 4))
+plt.subplot(1, 2, 1)
+plt.plot(history.history['accuracy'])
+plt.plot(history.history['val_accuracy'])
+plt.title('Model accuracy')
+plt.ylabel('Accuracy')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc='lower right')
+
+# Plot training & validation loss
+plt.subplot(1, 2, 2)
+plt.plot(history.history['loss'])
+plt.plot(history.history['val_loss'])
+plt.title('Model loss')
+plt.ylabel('Loss')
+plt.xlabel('Epoch')
+plt.legend(['Train', 'Validation'], loc='upper right')
+plt.tight_layout()
+plt.show()
+
+```
+
+# now try keras on moon data
+
+Prepare the data
+
+First we want to try without split and without normalizing/scaling them
+```{python moon_data}
+
+moon_train_x=X
+moon_train_y=y
+
+```
+
+Build the model
+
+```{python moon_model}
+
+moon_model= keras.Sequential([
+    #now need to flatten the data (why need that?), since the data is 1D, vector of 2 for each sample
+
+    keras.layers.Dense(2, activation='relu',input_shape=(2,)),#2 nodes for this layer, input shape is 2
+    keras.layers.Dense(2,activation='softmax')
+
+]
+)
+
+moon_model.compile(
+    optimizer='adam',
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+
+```
+
+train the model
+
+```{python moon_training}
+
+
+# Train the model
+history_moon = moon_model.fit(
+    moon_train_x, moon_train_y,
+    epochs=2000,
+    validation_data=(moon_train_x, moon_train_y)
+)
+
+# Evaluate the model
+test_loss, test_acc = moon_model.evaluate(moon_train_x, moon_train_y, verbose=2)
+print(f'\nTest accuracy: {test_acc}')
+
+
+```
+
+visualize the classification
+
+```{python vis_moon_keras}
+
+# Helper function to predict an output (0 or 1)
+def moon_predict(model, x):
+    
+    return np.argmax(model.predict(x), axis=1) #<-softmax function in this case, 2 classese
+
+plot_decision_boundary(lambda x: moon_predict(moon_model,x), X, y)
+
+
+
+```
+
+now try nodes of 3
+
+```{python model_moon3}
+
+
+moon_model= keras.Sequential([
+    #now need to flatten the data (why need that?), since the data is 1D, vector of 2 for each sample
+
+    keras.layers.Dense(1400, activation='tanh',input_shape=(2,)),#2 nodes for this layer, input shape is 2
+    keras.layers.Dense(2,activation='softmax')
+
+]
+)
+
+moon_model.compile(
+    optimizer='adam',
+    loss='sparse_categorical_crossentropy',
+    metrics=['accuracy']
+)
+
+
+
+# Train the model
+history_moon = moon_model.fit(
+    moon_train_x, moon_train_y,
+    epochs=2000,
+    validation_data=(moon_train_x, moon_train_y)
+)
+
+# Evaluate the model
+test_loss, test_acc = moon_model.evaluate(moon_train_x, moon_train_y, verbose=2)
+print(f'\nTest accuracy: {test_acc}')
+
+
+
+plot_decision_boundary(lambda x: moon_predict(moon_model,x), X, y)
+
+```
+
+Conclusion about complexity (# of nodes in the layer): it seems that keras has some way of controlling over-fitting. It won't be that crazy like how the #nodes affect the fitting in the simple NN manually implemented above. Even when the node # goes up to 1400 it won't be too curvy.
+
+For this simple question, it won't matter too much to select between tanh or relu.
+
+Running more epoches might squeeze the performance better tahn other parameters.
+
+
+## try one other example
+
+linear regression???
+
+```{python house_data}
+
+# Load California housing dataset
+from sklearn.datasets import fetch_california_housing
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler #standardize data, mean std
+
+# Get data
+housing = fetch_california_housing()
+X, y = housing.data, housing.target
+
+# Split data
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+# Normalize features
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.transform(X_test)
+
+```
+
+now build model and train
+
+```{python house_model}
+
+# Build model for regression
+model = keras.Sequential([
+    keras.layers.Dense(64, activation='relu', input_shape=(X_train.shape[1],)),
+    keras.layers.Dense(32, activation='relu'),
+    keras.layers.Dense(1)
+])
+
+# Compile
+model.compile(optimizer='adam', loss='mse', metrics=['mae'])
+
+# Train
+history = model.fit(
+    X_train_scaled, y_train,
+    epochs=100,
+    validation_split=0.2,
+    verbose=2,
+    callbacks=[
+        keras.callbacks.EarlyStopping(patience=10, restore_best_weights=True)
+    ]
+)
+
+test_loss, test_mae=model.evaluate(X_test, y_test)
+
+print(test_loss, test_mae)
+
+
+```
+
+save the model
+
+```{python save_model}
+
+# Save the model
+model.save('housing_model.keras')
+
+# Later, to load the model:
+loaded_model = keras.models.load_model('housing_model.keras')
+
+```
+
+## tips for training
+
+            # Setup optimizer and loss function
+            optimizer = tf.keras.optimizers.Adam(learning_rate=0.001)
+            loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+
+            # Training loop
+            @tf.function
+            def train_step(x, y):
+                with tf.GradientTape() as tape:
+                    logits = model(x, training=True)
+                    loss_value = loss_fn(y, logits)
+                grads = tape.gradient(loss_value, model.trainable_weights)
+                optimizer.apply_gradients(zip(grads, model.trainable_weights))
+                return loss_value
+
+            # Example training epoch
+            def train_epoch(dataset):
+                total_loss = 0
+                num_batches = 0
+                for x_batch, y_batch in dataset:
+                    loss = train_step(x_batch, y_batch)
+                    total_loss += loss
+                    num_batches += 1
+                return total_loss / num_batches
+
+## Other important considerations
+
++ Batch Normalization: Add this after dense layers to stabilize and accelerate training
+
+        keras.layers.Dense(64, activation='relu'),
+        keras.layers.BatchNormalization(),
+
++ Learning Rate Scheduling: Reduce the learning rate as training progresses
+   
+    lr_scheduler = keras.callbacks.ReduceLROnPlateau(
+        monitor='val_loss', factor=0.5, patience=5, min_lr=0.0001
+    )
+    model.fit(..., callbacks=[lr_scheduler])
+
+
++ Regularization: Combat overfitting with L1/L2 regularization
+    
+    keras.layers.Dense(64, activation='relu', kernel_regularizer=keras.regularizers.l2(0.001))
+
+
+I’ve found these techniques make a huge difference in real-world projects, especially when working with limited data.
