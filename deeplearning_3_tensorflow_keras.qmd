@@ -12,10 +12,327 @@ jupyter: python3
 
 Aim:
 
-+ part 3, tensor flow
++ Part 3, tensor flow
 
 reference: 
 
 https://www.tensorflow.org/guide/tensor
 
 https://www.tensorflow.org/tutorials/quickstart/beginner
+
+there are a good number of guides in the below link. need to check out.
+https://keras.io/getting_started/
+
+## Tensor introduction
+
+https://www.tensorflow.org/guide/tensor
+
+Tensors are multi-dimensional arrays with a uniform type (called a dtype). 
+
+**key poiont: they are similar to numpy arrays, BUT they are an immutable object. You can not modify them, but to create new ones.**
+
+
+Tensors often contain floats and ints, but have many other types, including:
+
+complex numbers
+strings
+The base tf.Tensor class requires tensors to be "rectangular"---that is, along each axis, every element is the same size. However, there are specialized types of tensors that can handle different shapes:
+
+Ragged tensors (see RaggedTensor below)
+Sparse tensors (see SparseTensor below)
+
+
+Tensors have shapes. Some vocabulary:
+
+Shape: The length (number of elements) of each of the axes of a tensor.
+Rank: Number of tensor axes. A scalar has rank 0, a vector has rank 1, a matrix is rank 2.
+Axis or Dimension: A particular dimension of a tensor.
+Size: The total number of items in the tensor, the product of the shape vector's elements.
+
+
+**You can reshape a tensor into a new shape. The tf.reshape operation is fast and cheap as the underlying data does not need to be duplicated.**
+
+The data maintains its layout in memory and a new tensor is created, with the requested shape, pointing to the same data. TensorFlow uses C-style "row-major" memory ordering, where incrementing the rightmost index corresponds to a single step in memory.
+
+Reshaping will "work" for any new shape with the same total number of elements, but it will not do anything useful if you do not respect the order of the axes.
+
+Swapping axes in tf.reshape does not work; you need tf.transpose for that.
+
+
+## logits or log odds are important to NN
+
+https://www.tensorflow.org/tutorials/quickstart/beginner
+
+      For each example, the model returns a vector of **logits or log-odds scores**, one for each class.
+
+Here, to make it easy to understand, we use logistic regression as example. Before doing the activation function in each layer, and the last layer too, the calculations here is a linear (multiple variate) function, say W*A+B. Think about what this is in logistic regression. We have this as
+
+$$ 
+  \begin{aligned}
+  Z^{[l]}= W*A^{[l-1]}+B \\
+
+  A^{[l]}=sigmoid(Z^{[l]})
+  \end{aligned}
+$$
+
+In this case $A^{[l]}$ is the logit for this layer, because it is obvious as below,
+
+$$
+  A= log(\frac{P}{1-P})=W*A+B
+$$
+
+A is the log odd and logit. !!!
+
+To see how it works, we can have the real code as described in the tutorial,
+
+```{python tensor_tutorial_1}
+import tensorflow as tf
+print("TensorFlow version:", tf.__version__)
+print("Num GPUs Available: ", len(tf.config.list_physical_devices('GPU')))
+
+
+mnist = tf.keras.datasets.mnist
+
+(x_train, y_train), (x_test, y_test) = mnist.load_data()
+x_train, x_test = x_train / 255.0, x_test / 255.0
+
+model = tf.keras.models.Sequential([
+  tf.keras.layers.Flatten(input_shape=(28, 28)),
+  tf.keras.layers.Dense(128, activation='relu'),
+  tf.keras.layers.Dropout(0.2),
+  tf.keras.layers.Dense(10)
+])
+
+```
+
+**Sequential** is useful for stacking layers where each layer has one input tensor and one output tensor. Layers are functions with a known mathematical structure that can be reused and have trainable variables. Most TensorFlow models are composed of layers. This model uses the Flatten, Dense, and Dropout layers.
+
+**For each example, the model returns a vector of logits or log-odds scores, one for each class.**
+
+```{python tutorial_2}
+
+predictions = model(x_train[:1]).numpy()
+predictions
+
+```
+
+Notes by Feng: "tf.eras.layers.Dense" function by default has no activation. That is why it returns raw logits or log odds.
+
+```{python softmax_1}
+
+tf.nn.softmax(predictions).numpy()
+
+```
+
+Define a loss function for training using losses.SparseCategoricalCrossentropy:
+
+
+
+The loss function takes a vector of ground truth values and a vector of logits and returns a scalar loss for each example. This loss is equal to the negative log probability of the true class (since the wrong class): The loss is zero if the model is sure of the correct class.
+
+This untrained model gives probabilities close to random (1/10 for each class), so the initial loss should be close to -tf.math.log(1/10) ~= 2.3.
+
+```{python loss_1}
+
+loss_fn = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+
+loss_fn(y_train[:1], predictions).numpy()
+
+```
+
+compile the model
+
+```{python compile}
+
+model.compile(optimizer='adam',
+              loss=loss_fn,
+              metrics=['accuracy'])
+
+```
+
+train the model
+
+```{python train_1}
+
+model.fit(x_train, y_train, epochs=5)
+
+```
+
+evaluate the model
+
+```{python evaluate}
+
+model.evaluate(x_test,  y_test, verbose=2)
+
+```
+
+If you want your model to return a probability, you can wrap the trained model, and attach the softmax to it:
+
+
+```{python prob_model}
+probability_model = tf.keras.Sequential([
+  model,
+  tf.keras.layers.Softmax()
+])
+
+probability_model(x_test[:5])
+```
+
+
+
+## Optimizer in Keras
+
+### Adam, adaptive moment estimation
+
+    The Adam optimizer, short for Adaptive Moment Estimation, is an optimization algorithm used in training deep learning models. It combines the advantages of Momentum and RMSprop techniques to adjust learning rates for each parameter automatically, making it efficient for large datasets and complex models. Adam is particularly effective for handling sparse gradients and noisy problems, and it is relatively easy to configure, performing well on most tasks.
+
+Combines two techniques, Momentum and RMSprop to adjust learning rates
+
+
+[Adam optimization is a stochastic gradient descent method that is based on adaptive estimation of first-order and second-order moments.
+
+According to Kingma et al., 2014, the method is "computationally efficient, has little memory requirement, invariant to diagonal rescaling of gradients, and is well suited for problems that are large in terms of data/parameters".](#https://keras.io/api/optimizers/adam/)
+
+### SGD (Stochastic Gradient Descent):
+
+Gradient descent (with momentum) optimizer.
+
+Description: A simple yet effective optimizer that updates parameters based on the gradient of the loss function.
+
+Best for problems where you want more control over the learning process, such as tuning the learning rate and momentum.
+
+**Momentum for the Learning Rate SGD**
+
+      Momentum in SGD is a technique that helps to accelerate the convergence of the optimization process. It works by introducing an additional term to the update rule that accounts for the direction of the previous gradient. This additional term can help to maintain the direction of the optimization process and reduce the likelihood of overshooting the optimal solution.
+
+### RMSprop
+
+RMSprop (Root Mean Squared Propagation) is an adaptive learning rate optimization algorithm designed to improve the performance and efficiency of training neural networks.
+
+RMSprop maintains a moving average of the squared gradients and divides the gradient by the root of this average. This helps to normalize the gradient and prevent the learning rate from becoming too small. 
+
+Optimizer that implements the RMSprop algorithm.
+
+The gist of RMSprop is to:
+
+ + Maintain a moving (discounted) average of the square of gradients
+ + Divide the gradient by the root of this average
+
+This implementation of RMSprop uses plain momentum, not Nesterov momentum.
+
+The centered version additionally maintains a moving average of the gradients, and uses that average to estimate the variance.
+
+## Loss function in Keras
+
+### Regression loss function
+
++ keras.losses.MeanSquaredError
+
+  loss = mean(square(y_true - y_pred))
+
++ keras.losses.MeanAbsoluteError
+
+  loss = mean(abs(y_true - y_pred))
+
++ keras.losses.MeanAbsolutePercentageError
+
+  loss = 100 * mean(abs((y_true - y_pred) / y_true))
+
++ keras.losses.MeanSquaredLogarithmicError 
+
+  loss = mean(square(log(y_true + 1) - log(y_pred + 1)))
+
++ CosineSimilarity 
+
+    keras.losses.CosineSimilarity(
+        axis=-1, reduction="sum_over_batch_size", name="cosine_similarity", dtype=None
+    )
+
+Computes the cosine similarity between y_true & y_pred.
+
+Note that it is a number between -1 and 1. When it is a negative number between -1 and 0, 0 indicates orthogonality and values closer to -1 indicate greater similarity. This makes it usable as a loss function in a setting where you try to maximize the proximity between predictions and targets. If either y_true or y_pred is a zero vector, cosine similarity will be 0 regardless of the proximity between predictions and targets.
+
+Formula:
+
+  loss = -sum(l2_norm(y_true) * l2_norm(y_pred))
+
+And so on, so forth.
+
+### Probability loss function
+
++ BinaryCrossentropy (non-one-hot encoding, no focal)
+  - BinaryFocalCrossentropy (non-one-hot, but focal)
+
++ CategoricalCrossentropy(one-hot, non focal)
+
+  - CategoricalFocalCrossentropy (one-hot, focal)
+
+  - SparseCategoricalCrossEntropy (non-one-hot/label, non-focal)
+
+
++ Poison
+   keras.losses.Poisson
+
++ CTC
+
++ KLDivergence
+
+Computes Kullback-Leibler divergence loss between y_true & y_pred.
+
+A few points:
+
+  reduction: sum_over_batch_size == per individual average loss
+
+  from_logits: false by default, meaning we are expecting probabilities instead of raw numbers.
+
+
+  Examples:
+
+  model.compile(
+    loss=keras.losses.BinaryCrossentropy(from_logits=True),
+    ...
+  )
+  As a standalone function:
+
+  >>> # Example 1: (batch_size = 1, number of samples = 4)
+  >>> y_true = np.array([0, 1, 0, 0])
+  >>> y_pred = np.array([-18.6, 0.51, 2.94, -12.8])
+  >>> bce = keras.losses.BinaryCrossentropy(from_logits=True)
+  >>> bce(y_true, y_pred)
+  0.8654
+
+  >>> # Example 2: (batch_size = 2, number of samples = 4)
+>>> y_true = np.array([[0, 1], [0, 0]])
+>>> y_pred = np.array([[-18.6, 0.51], [2.94, -12.8]])
+>>> # Using default 'auto'/'sum_over_batch_size' reduction type.
+>>> bce = keras.losses.BinaryCrossentropy(from_logits=True)
+>>> bce(y_true, y_pred)
+0.8654
+>>> # Using 'sample_weight' attribute
+>>> bce(y_true, y_pred, sample_weight=[0.8, 0.2])
+0.243
+>>> # Using 'sum' reduction` type.
+>>> bce = keras.losses.BinaryCrossentropy(from_logits=True,
+...     reduction="sum")
+>>> bce(y_true, y_pred)
+1.730
+>>> # Using 'none' reduction type.
+>>> bce = keras.losses.BinaryCrossentropy(from_logits=True,
+...     reduction=None)
+>>> bce(y_true, y_pred)
+array([0.235, 1.496], dtype=float32)
+
+Default Usage: (set from_logits=False)
+
+>>> # Make the following updates to the above "Recommended Usage" section
+>>> # 1. Set `from_logits=False`
+>>> keras.losses.BinaryCrossentropy() # OR ...('from_logits=False')
+>>> # 2. Update `y_pred` to use probabilities instead of logits
+>>> y_pred = [0.6, 0.3, 0.2, 0.8] # OR [[0.6, 0.3], [0.2, 0.8]]
+
+
+**Example for focal,** 
+
+According to Lin et al., 2018, it helps to apply a "focal factor" to down-weight easy examples and focus more on hard examples. By default, the focal tensor is computed as follows:
+
+focal_factor = (1 - output) ** gamma for class 1 focal_factor = output ** gamma for class 0 where gamma is a focusing parameter. **When gamma=0, this function is equivalent to the binary crossentropy loss.**

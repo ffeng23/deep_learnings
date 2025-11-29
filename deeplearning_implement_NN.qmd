@@ -17,6 +17,8 @@ jupyter: python3
 
 reference: https://dennybritz.com/posts/wildml/implementing-a-neural-network-from-scratch/
 
+
+
 # Start Implementing
 
 ## Data generation.
