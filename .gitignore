@@ -208,3 +208,5 @@ __marimo__/
 
 #Feng added
 *.html
+*.gz
+aclImdb_v1_extracted/
