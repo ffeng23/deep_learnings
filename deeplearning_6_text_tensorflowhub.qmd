@@ -1,0 +1,68 @@
+---
+title: "Deep learning, text classification with tensor-hub, part 6 "
+author: "Feng, Feng"
+date: 12/2/2025
+format: 
+  html:
+    html-math-method: mathjax
+    embed-resources: true
+    code-fold: false
+jupyter: python3
+---
+
+## Aims:
+
++ try to run text classification using models pretrained in tensorflow-hub.
+
+In this case, tensorflow-hub is "TensorFlow Hub is a repository of trained machine learning models ready for fine-tuning and deployable anywhere. Reuse trained models like BERT and Faster R-CNN with just a few lines of code. ". 
+
+See the guide in https://www.tensorflow.org/hub/overview
+
+## Example
+
+https://www.tensorflow.org/tutorials/keras/text_classification_with_hub
+
+```{python install}
+#| eval: false 
+#!pip install tensorflow-hub
+#!pip install tensorflow-datasets
+
+# or
+#!uv add tensorflow-hub tensorflow-datasets
+
+```
+
+Now download data
+
+```{python loadlibrary}
+
+import os
+import numpy as np
+
+import tensorflow as tf
+import tensorflow_hub as hub
+import tensorflow_datasets as tfds
+
+print("Version: ", tf.__version__)
+print("Eager mode: ", tf.executing_eagerly())
+print("Hub version: ", hub.__version__)
+print("GPU is", "available" if tf.config.list_physical_devices("GPU") else "NOT AVAILABLE")
+
+```
+
+download data
+
+```{python data}
+
+# Split the training set into 60% and 40% to end up with 15,000 examples
+# for training, 10,000 examples for validation and 25,000 examples for testing.
+train_data, validation_data, test_data = tfds.load(
+    name="imdb_reviews", 
+    split=('train[:60%]', 'train[60%:]', 'test'),
+    as_supervised=True)
+
+#builder = tfds.builder('imdb_reviews', data_dir='/config/deep_learnings/temp')
+#builder.download_and_prepare()  # Manually trigger download and preparation
+#    dataset = builder.as_dataset()
+
+```
