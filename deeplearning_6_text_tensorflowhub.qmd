@@ -42,11 +42,15 @@ import numpy as np
 import tensorflow as tf
 import tensorflow_hub as hub
 import tensorflow_datasets as tfds
+import tf_keras
 
-print("Version: ", tf.__version__)
+print("tf Version: ", tf.__version__)
+print("tf_keras Version: ", tf_keras.__version__)
+print("keras Version: ", tf.keras.__version__)
 print("Eager mode: ", tf.executing_eagerly())
 print("Hub version: ", hub.__version__)
 print("GPU is", "available" if tf.config.list_physical_devices("GPU") else "NOT AVAILABLE")
+
 
 ```
 
@@ -61,8 +65,96 @@ train_data, validation_data, test_data = tfds.load(
     split=('train[:60%]', 'train[60%:]', 'test'),
     as_supervised=True)
 
-#builder = tfds.builder('imdb_reviews', data_dir='/config/deep_learnings/temp')
+#builder = tfds.builder('mnist', data_dir='/config/deep_learnings/temp')
 #builder.download_and_prepare()  # Manually trigger download and preparation
 #    dataset = builder.as_dataset()
 
 ```
+
+explore data
+
+```{python data2}
+
+train_examples_batch, train_labels_batch = next(iter(train_data.batch(10)))
+train_examples_batch
+
+```
+
+Build the model
+
+First embedding, let's use a pre-trained text embedding model from TensorFlow Hub called google/nnlm-en-dim50/2.
+```{python model }
+
+embedding = "https://tfhub.dev/google/nnlm-en-dim50/2"
+hub_layer = hub.KerasLayer(embedding, input_shape=[], 
+                           dtype=tf.string, trainable=True)
+hub_layer(train_examples_batch[:3])
+
+
+```
+
+sequential model now.
+
+```{python model2}
+
+model = tf_keras.Sequential()
+model.add(hub_layer)
+model.add(tf_keras.layers.Dense(16, activation='relu'))
+model.add(tf_keras.layers.Dense(1))
+
+model.summary()
+
+model.compile(optimizer='adam',
+              loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
+              metrics=['accuracy'])
+
+```
+
+Run the model
+
+```{python runModel}
+history = model.fit(train_data.shuffle(10000).batch(512),
+                    epochs=10,
+                    validation_data=validation_data.batch(512),
+                    verbose=1)
+
+```
+
+evaluate the model
+
+```{python evaluate}
+
+results = model.evaluate(test_data.batch(512), verbose=2)
+
+for name, value in zip(model.metrics_names, results):
+  print("%s: %.3f" % (name, value))
+
+```
+
+Play a little with results (data set)
+
+```{python play_data}
+
+print(f"type of results: {type(results)} with len: {len(results)}")
+
+text_data, label_data=next(iter(test_data.batch(10)))
+
+count=0
+for element in test_data:
+  print(type(element))
+  x,y=element
+  #print(x)
+  if count==10:
+    print(x.numpy())
+    print(y.numpy())
+  count+=1
+
+```
+
+Notes about dataset:
+if it is not in batches (specify the batch size during read or call on dataset.batch(size)), it is in individual records. We can access by
+len(dataset), and retrieve with "for element in dataset:". Then unpack it by "x,y=element"
+
+type(dataset) and type(element) are helpful.
+
+To turn into numpy, we could do "x.numpy()"
