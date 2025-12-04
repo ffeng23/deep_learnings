@@ -92,16 +92,238 @@ We start by loading the MNIST dataset. Since MobileNetV2 is pre-trained on three
 
 from tensorflow.keras.datasets import mnist
 import numpy as np
+import tensorflow as tf
+from tensorflow.keras.utils import to_categorical
 
 (train_images, train_labels), (test_images, test_labels) = mnist.load_data()
 
-train_images = np.stack([train_images]*3, axis=-1) / 255.0
+train_images = np.stack([train_images]*3, axis=-1) / 255.0 #make it from 1 channel to 3 channels.
 test_images = np.stack([test_images]*3, axis=-1) / 255.0
 
 train_images = tf.image.resize(train_images, [32, 32])
 test_images = tf.image.resize(test_images, [32, 32])
 
-train_labels = to_categorical(train_labels, 10)
+train_labels = to_categorical(train_labels, 10) #turn into on hot encoding
 test_labels = to_categorical(test_labels, 10)
 
 ```
+
+We load MobileNetV2 with pre-trained weights from ImageNet excluding the fully connected top layers to customize for our 10-class classification task:
+
+Freeze the base model to retain learned features and avoid overfitting.
+Add a global average pooling layer to reduce model complexity.
+Add a dense layer with softmax activation for the output classes.
+
+
+```{python models_first}
+from tensorflow.keras.applications import MobileNetV2
+from tensorflow.keras.layers import Input, GlobalAveragePooling2D, Dense
+from tensorflow.keras.models import Model
+
+base_model = MobileNetV2(weights='imagenet', include_top=False, input_shape=(32, 32, 3))
+base_model.trainable = False  # Freeze base model
+
+inputs = Input(shape=(32, 32, 3))
+
+x = base_model(inputs, training=False) 
+#this makes a basemodel to take in input with a shpe defined 32x32x3
+
+#now we want to further define a new layer, globalAveragepool2d to reduce
+# the dimension. and then this will take in the previous base model and 
+# average globally into 1 (no matter what, see below). It keeps the channel
+# this is like create the layer and process the input and generate output
+#
+gap=GlobalAveragePooling2D()
+x = gap(x)
+
+#similar to above, make the model pass through another layer!! meaning
+#adding a layer to the model.
+dl=Dense(10, activation='softmax')
+outputs = dl(x)
+model = Model(inputs, outputs)
+
+model.summary()
+```
+
+**The GlobalAveragePooling2D layer** computes the average of all values in each feature map. This reduces the spatial dimensions (height and width) to 1 while retaining the depth (number of channels). The resulting output is a 2D tensor with shape (batch_size, channels).
+
+train the model
+
+```{python model_2nd}
+
+model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
+model.fit(train_images, train_labels, epochs=10, validation_split=0.2)
+
+```
+
+Fine-Tuning the Model
+After initial training we unfreeze the last few layers of the base model to perform fine-tuning. This allows the model to adjust high-level features for the MNIST data while retaining its foundational knowledge.
+
+```{python model_finetune}
+base_model.trainable = True
+
+#there are about 153 layers in total. top 50s are trainable!!!
+for layer in base_model.layers[:100]:
+    layer.trainable = False
+
+model.compile(optimizer=tf.keras.optimizers.Adam(1e-5), loss='categorical_crossentropy', metrics=['accuracy'])
+model.fit(train_images, train_labels, epochs=5, validation_split=0.2)
+
+```
+
+Evaluate the model
+
+
+```{python evaluate}
+
+loss, accuracy = model.evaluate(test_images, test_labels)
+print(f"Test loss: {loss}")
+print(f"Test accuracy: {accuracy}")
+
+
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+test_predictions = model.predict(test_images)
+test_predictions_classes = np.argmax(test_predictions, axis=1)
+test_true_classes = np.argmax(test_labels, axis=1)
+
+cm = confusion_matrix(test_true_classes, test_predictions_classes)
+plt.figure(figsize=(10, 8))
+sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', cbar=False)
+plt.xlabel('Predicted Label')
+plt.ylabel('True Label')
+plt.title('Confusion Matrix')
+plt.show()
+
+```
+
+visualize samples
+
+```{python sample_vis}
+
+def display_sample(sample_images, sample_labels, sample_predictions):
+    fig, axes = plt.subplots(3, 3, figsize=(12, 12))
+    fig.subplots_adjust(hspace=0.5, wspace=0.5)
+
+    for i, ax in enumerate(axes.flat):
+        ax.imshow(sample_images[i].reshape(32, 32), cmap='gray')
+        ax.set_xlabel(f"True: {sample_labels[i]}\nPredicted: {sample_predictions[i]}")
+        ax.set_xticks([])
+        ax.set_yticks([])
+
+    plt.show()
+
+test_images_gray = np.dot(test_images[...,:3], [0.2989, 0.5870, 0.1140])
+
+random_indices = np.random.choice(len(test_images_gray), 9, replace=False)
+sample_images = test_images_gray[random_indices]
+sample_labels = test_true_classes[random_indices]
+sample_predictions = test_predictions_classes[random_indices]
+display_sample(sample_images, sample_labels, sample_predictions)
+
+```
+
+# Thoughts
+
+def display_sample(sample_images, sample_labels, sample_predictions):
+    fig, axes = plt.subplots(3, 3, figsize=(12, 12))
+    fig.subplots_adjust(hspace=0.5, wspace=0.5)
+
+    for i, ax in enumerate(axes.flat):
+        ax.imshow(sample_images[i].reshape(32, 32), cmap='gray')
+        ax.set_xlabel(f"True: {sample_labels[i]}\nPredicted: {sample_predictions[i]}")
+        ax.set_xticks([])
+        ax.set_yticks([])
+
+    plt.show()
+
+test_images_gray = np.dot(test_images[...,:3], [0.2989, 0.5870, 0.1140])
+
+random_indices = np.random.choice(len(test_images_gray), 9, replace=False)
+sample_images = test_images_gray[random_indices]
+sample_labels = test_true_classes[random_indices]
+sample_predictions = test_predictions_classes[random_indices]
+display_sample(sample_images, sample_labels, sample_predictions)
+Output:
+
+Labeled-Images
+Labelled Images Output
+You can get the complete source code from here.
+
+Applications
+Transfer learning is widely used across multiple domains including:
+
+Computer Vision: Transfer learning is prevalent in image recognition tasks where models pre-trained on large image datasets are adapted to specific tasks such as medical imaging, facial recognition and object detection.
+Natural Language Processing (NLP): In NLP models like BERT, GPT or ELMo are pre-trained on vast text corpora and later fine-tuned for specific tasks such as sentiment analysis, machine translation and question-answering.
+Healthcare: Transfer learning helps develop medical diagnostic tools using knowledge from general image recognition models to analyze medical images like X-rays or MRIs.
+Finance: Transfer learning in finance assists in fraud detection, risk assessment and credit scoring by transferring patterns learned from related financial datasets.
+Advantages
+Speed up the training process: By using a pre-trained model the model can learn more quickly and effectively on the second task, as it already has a good understanding of the features and patterns in the data.
+Better performance: Transfer learning can lead to better performance on the second task, as the model can use the knowledge it has gained from the first task.
+Handling small datasets: When there is limited data available for the second task, transfer learning can help to prevent overfitting as the model will have already learned general features that are likely to be useful in the second task.
+Disadvantages
+Domain mismatch: The pre-trained model may not be well-suited to the second task if the two tasks are vastly different or the data distribution between the two tasks is very different.
+Overfitting: Transfer learning can lead to overfitting if the model is fine-tuned too much on the second task, as it may learn task-specific features that do not generalize well to new data.
+Complexity: The pre-trained model and the fine-tuning process can be computationally expensive and may require specialized hardware.
+
+
+# Extra exercise.
+
+I want to see whether I can rewrite the nn for building image analysis
+
+using the mnist data.
+
+```{python sample_extra}
+
+(train_samples,train_cats),(test_samples,test_cats)=mnist.load_data()
+
+#normalize the data
+train_samples=train_samples/255.0
+test_samples=test_samples/255.0
+
+#categorical
+train_cats=to_categorical(train_cats)
+test_cats=to_categorical(test_cats)
+```
+
+Build the model with one hidden layer!!!
+
++ flatten layer first 
+
++ hidden layer with 128 nodes
+
++ output layer with 10 nodes
+
+```{python model_extra2}
+
+input=Input(shape=(28,28))
+model_extra=tf.keras.Sequential()
+
+
+
+model_extra.add(tf.keras.layers.Flatten(input_shape=(28,28)))
+
+model_extra.add(tf.keras.layers.Dense(32, activation='relu'))
+
+model_extra.add(tf.keras.layers.Dense(10, activation='relu'))
+model_extra.add(tf.keras.layers.Dense(10, activation='softmax'))
+
+
+model_extra.summary()
+
+```
+
+compile model
+
+```{python compile_extra}
+
+model_extra.compile(loss="categorical_crossentropy", optimizer="adam",
+  metrics=["accuracy"]
+)
+
+model_extra.fit(test_samples, test_cats, epochs=40, validation_split=0.2)
+
+```
+
