@@ -1,0 +1,107 @@
+---
+title: "Deep learning, part 8, transfer learning."
+author: Feng, Feng
+date: 12/3/2025
+format: 
+  html:
+    embed-resources: true
+    code-fold: false
+    html-math-method: mathjax
+jupyter: python3
+---
+
+Aims:
+
+ + Transfer learning with examples
+
+Ref: https://www.geeksforgeeks.org/machine-learning/ml-introduction-to-transfer-learning/
+
+
+Concepts:
+
+Transfer learning is a machine learning technique where a model trained on one task is repurposed as the foundation for a second task. This approach is beneficial when the second task is related to the first or when data for the second task is limited.
+
+Transfer learning offers solutions to key challenges like:
+
+Limited Data: Acquiring extensive labelled data is often challenging and costly. Transfer learning enables us to use pre-trained models, reducing the dependency on large datasets.
+Enhanced Performance: Starting with a pre-trained model which has already learned from substantial data allows for faster and more accurate results on new tasks ideal for applications needing high accuracy and efficiency.
+Time and Cost Efficiency: Transfer learning shortens training time and conserves resources by utilizing existing models hence eliminating the need for training from scratch.
+Adaptability: Models trained on one task can be fine-tuned for related tasks making transfer learning versatile for various applications from image recognition to natural language processing.
+
+Working of Transfer Learning
+Transfer learning involves a structured process to use existing knowledge from a pre-trained model for new tasks:
+
+Pre-trained Model: Start with a model already trained on a large dataset for a specific task. This pre-trained model has learned general features and patterns that are relevant across related tasks.
+Base Model: This pre-trained model, known as the base model, includes layers that have processed data to learn hierarchical representations, capturing low-level to complex features.
+Transfer Layers: Identify layers within the base model that hold generic information applicable to both the original and new tasks. These layers often near the top of the network capture broad, reusable features.
+Fine-tuning: Fine-tune these selected layers with data from the new task. This process helps retain the pre-trained knowledge while adjusting parameters to meet the specific requirements of the new task, improving accuracy and adaptability.
+
+```{mermaid}
+
+flowchart LR
+
+A[Task A] --> B(Pretrained Model)-->C{Knowledge}-->D(New Model)-->E[Task B]
+
+```
+
+Low-level features learned for task A should be beneficial for learning of model for task B.
+
+## Frozeon vs trainable layers
+
+Frozen Vs Trainable Layers in Transfer Learning
+
+Aspect	 | Frozen Layers	|  Trainable Layers
+---------|------------------|------------------
+Definition|	Layers whose weights are kept fixed and not updated during training |	Layers whose weights are updated during training
+Purpose	| Preserve general features learned from large pre-trained datasets|	Adapt to task-specific features of the new dataset
+Learning Process|	No backpropagation updates; remain constant|	Updated through backpropagation based on new data
+Use Case |	Used when new dataset is small or similar to the original dataset |	Used when new dataset is large or significantly different from the original task
+Computation Cost |	Lower, since fewer parameters are trained	 | Higher, as more parameters need to be updated
+Example in CNN |	Early convolutional layers that capture edges, textures and basic shapes |	Later fully connected layers or deeper convolutional layers for fine-tuned features
+
+
+## How to Decide Which Layers to Freeze or Train?
+
+The extent to which you freeze or fine-tune layers depends on the similarity and size of your target dataset:
+
+ + Small, Similar Dataset: For smaller datasets that resemble the original dataset, you freeze most layers and only fine-tune the last one or two layers to prevent overfitting.
+
+ + Large, Similar Dataset: With large, similar datasets you can unfreeze more layers allowing the model to adapt while retaining learned features from the base model.
+
+ + Small, Different Dataset: For smaller, dissimilar datasets, fine-tuning layers closer to the input layer helps the model learn task-specific features from scratch.
+
+ + Large, Different Dataset: In this case, fine-tuning the entire model helps the model adapt to the new task while using the broad knowledge from the pre-trained model.
+
+
+# Transfer Learning with MobileNetV2 for MNIST Classification
+
+In this section, we’ll explore transfer learning by fine-tuning a MobileNetV2 model pre-trained on ImageNet for classifying MNIST digits.
+
+1. Preparing the Dataset
+We start by loading the MNIST dataset. Since MobileNetV2 is pre-trained on three-channel RGB images of size 224x224, we make a few adjustments to match its expected input shape:
+
+    Reshape the images from grayscale (28x28, 1 channel) to RGB (28x28, 3 channels).
+    
+    Resize images to 32x32 pixels, aligning with our model’s configuration.
+    
+    Normalize pixel values to fall between 0 and 1 by dividing by 255.
+
+    (how???)
+
+```{python data}
+
+from tensorflow.keras.datasets import mnist
+import numpy as np
+
+(train_images, train_labels), (test_images, test_labels) = mnist.load_data()
+
+train_images = np.stack([train_images]*3, axis=-1) / 255.0
+test_images = np.stack([test_images]*3, axis=-1) / 255.0
+
+train_images = tf.image.resize(train_images, [32, 32])
+test_images = tf.image.resize(test_images, [32, 32])
+
+train_labels = to_categorical(train_labels, 10)
+test_labels = to_categorical(test_labels, 10)
+
+```
