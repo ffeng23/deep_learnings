@@ -1,8 +1,7 @@
 # deep_learnings
-a repo to start learning deep learning/AI
+a repo for AI deep learning utilities.
 
-## first course
-
+## Ref
 Kaggle
 https://www.kaggle.com/learn/intro-to-deep-learning
 
@@ -16,10 +15,10 @@ https://learn.deeplearning.ai/courses/agentic-ai/lesson/pu5xbv/welcome!
 
 AI Python for Beginners
 
-user: ffeng9@gmail.com
-passwrd: syz33222
+ffeng9 
+syz##@@@
 
-## 3rd one
+## 
 
 https://udlbook.github.io/udlbook/
 
