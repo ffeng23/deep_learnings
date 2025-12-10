@@ -1,0 +1,356 @@
+---
+title: "Deep Learning, part 9, overfitting and underfitting"
+date: 12/4/2025
+format: 
+  html:
+    embed-resources: true
+    code-fold: false
+    html-math-method: mathjax
+jupyter: python3
+---
+
+Aim:
+
+ + overfitting and underfitting
+
+Ref: https://www.tensorflow.org/tutorials/keras/overfit_and_underfit
+
+
+# Start
+
+```{python import}
+
+import tensorflow as tf
+
+from tensorflow.keras import layers
+from tensorflow.keras import regularizers
+
+print("tf version:",tf.__version__)
+
+print("keras version:",tf.keras.__version__)
+
+print("GPU:", tf.config.list_physical_devices("GPU"))
+
+```
+
+A model trained on more complete data will naturally generalize better. When that is no longer possible, the next best solution is to use techniques like **regularization**. These place constraints on the quantity and type of information your model can store. **If a network can only afford to memorize a small number of patterns, the optimization process will force it to focus on the most prominent patterns, which have a better chance of generalizing well**.
+
+```{python setup}
+
+## No, don't do this. instead try "uv add tensorflow_docs"
+#!pip install git+https://github.com/tensorflow/docs
+
+import tensorflow_docs as tfdocs
+import tensorflow_docs.modeling
+import tensorflow_docs.plots
+
+from  IPython import display
+from matplotlib import pyplot as plt
+
+import numpy as np
+
+import pathlib
+import shutil
+import tempfile
+
+logdir = pathlib.Path(tempfile.mkdtemp())/"tensorboard_logs"
+shutil.rmtree(logdir, ignore_errors=True)
+```
+
+Data
+
+The Higgs dataset
+
+It contains 11,000,000 examples, each with 28 features, and a binary class label.
+
+```{python data}
+
+gz = tf.keras.utils.get_file('HIGGS.csv.gz', 'https://archive.ics.uci.edu/ml/machine-learning-databases/00280/HIGGS.csv.gz')
+
+FEATURES = 28
+
+ds = tf.data.experimental.CsvDataset(gz,[float(),]*(FEATURES+1), compression_type="GZIP")
+```
+
+play a little with dataset so far.
+
+```{python ds_data}
+
+count=0
+for element in ds:
+  count+=1
+  if count < 2:
+    print(f"type of element:{type(element)} and len of element:{len(element)}")
+    print(element)
+  else :
+    break
+
+#as we can see the ds were arranged in records/entries/rows. and  every row is a tuple. in this case a tuple of 28 elements
+
+#another way to step through
+
+element=next(iter(ds))
+print("first element :",element)
+
+#third way
+element=ds.take(2) #take function, will take first count records 
+    #if the data are in batches, will take the first count batches.
+    #when it is in batches, each batch/take will be first a tuple of
+    # elements. and each element will be of size of batch size
+
+
+print("elements:",element)
+count=0
+for es in element:
+  print(count, ":" ,es)
+
+
+element_array=ds.batch(100).take(1)
+
+print(element_array)
+for es in element_array:
+  print(es[1].shape)
+
+```
+
+Next, we unpack the records. I mean rearrange into (label, record) 
+
+```{python unpack}
+
+def pack_row(*row):
+  label = row[0] #here we use stack to get extra dimension
+  #label=tf.stack(label,)
+  #label=tf.cast(label, dtype=tf.uint8)
+  features = tf.stack(row[1:],1)
+  return features, label
+
+packed_ds = ds.batch(10000).map(pack_row).unbatch()
+
+# take look at them
+
+for features,label in packed_ds.batch(1000).take(1):
+  print("what!!")
+  print(features[0])
+  plt.hist(features.numpy().flatten(), bins = 101)
+
+  #see how man features in there
+  print("features shape", features.shape, "\n :::",features.numpy())
+  print("label shape", label.shape, "\n :::",label.numpy())
+
+for f,l in packed_ds.batch(10000).take(1):
+  print(l.numpy().shape)
+
+```
+
+To keep this tutorial relatively short, use just the first 1,000 samples for validation, and the next 10,000 for training:
+
+```{python get_data_1000}
+N_VALIDATION = int(1e3)
+N_TRAIN = int(1e4)
+BUFFER_SIZE = int(1e4)
+BATCH_SIZE = 500
+STEPS_PER_EPOCH = N_TRAIN//BATCH_SIZE
+```
+The Dataset.skip and Dataset.take methods make this easy.
+
+At the same time, use the Dataset.cache method to ensure that the loader doesn't need to re-read the data from the file on each epoch:
+
+```{python select}
+validate_ds = packed_ds.take(N_VALIDATION).cache()
+train_ds = packed_ds.skip(N_VALIDATION).take(N_TRAIN).cache()
+
+count=tf.data.experimental.cardinality(train_ds).numpy()
+
+print(f"count:{count}")
+
+count = sum(1 for _ in train_ds)
+print("Number of records:", count)
+train_ds
+
+count = train_ds.reduce(0, lambda x, _: x + 1)
+print("Number of records **:", count)
+
+#len(train_ds)
+#turn 
+
+```
+
+make it in batches
+
+```{python batch_make}
+
+#validate_ds = validate_ds.batch(BATCH_SIZE)
+#train_ds_f, train_df = train_ds.shuffle(BUFFER_SIZE).batch(BATCH_SIZE)
+
+validate_ds = validate_ds.batch(N_VALIDATION)
+train_ds = train_ds.shuffle(BUFFER_SIZE).batch(N_TRAIN)
+
+for validate_ds_x, validate_ds_y in validate_ds.take(1):
+  print("what2")
+  print(validate_ds_x.numpy().shape)
+  print(validate_ds_y.numpy().shape)
+  validate_ds_y=tf.reshape(validate_ds_y,(-1,1))
+  print(validate_ds_y.numpy().shape)
+
+#since now it is not batch, we will see 2 batches
+count = sum(1 for _ in validate_ds)
+print("Number of records:", count)
+
+validate_ds_x, validate_ds_y=next(iter(validate_ds))
+validate_ds_y=tf.reshape(validate_ds_y,(-1,1))
+print(validate_ds_y.numpy().shape)
+
+print(validate_ds_x.numpy().shape)
+
+train_ds_x, train_ds_y=next(iter(train_ds))
+train_ds_y=tf.reshape(train_ds_y,(-1,1))
+print(train_ds_y.numpy().shape)
+
+print(train_ds_x.numpy().shape)
+
+#count
+#  = sum(1 for _ in train_ds)
+#print("Number of records:", count)
+
+
+count=validate_ds.reduce(0, lambda x, _: x+1)
+print("Number of batches:", count)
+
+count=train_ds.unbatch().reduce(0, lambda x, _: x+1)
+print("Number of records:", count)
+
+count=train_ds.reduce(0, lambda x, _: x+1)
+print("Number of batches:", count)
+
+#after batching, each record is one BATCH
+
+print("record batch 1st:",next(iter(train_ds)))
+
+# each batch are now arranged in (features, labels)
+#because this is the structure after pack(*row)
+f, la =next(iter(train_ds))
+
+# we can look at f and la as numpy arrays
+
+print(f"feature shape:{f.numpy().shape}")
+
+print(f"label shape:{la.numpy().shape}")
+
+train_ds2=np.array(train_ds).reshape(-1,1)
+
+#because this is the structure after pack(*row)
+# f,la = train_ds2
+
+# we can look at f and la as numpy arrays
+
+count=1
+for b in train_ds2:
+  print("batch", b)
+  for element in b:
+    count+=1
+    if count<3:
+      print(f"feature shape:{element}")
+      #la, f = element
+      #print(la)
+
+
+
+
+```
+
+Modelling
+
+The simplest way to prevent overfitting is to start with a small model: A model with a small number of learnable parameters (which is determined by the number of layers and the number of units per layer). In deep learning, the number of learnable parameters in a model is often referred to as the model's **"capacity"**.
+
+
+Always keep this in mind: deep learning models tend to be good at fitting to the training data, but the real challenge is generalization, not fitting.
+
+At the same time, if you make your model too small, it will have difficulty fitting to the training data. There is a balance between "too much capacity" and "not enough capacity".
+
+Unfortunately, there is no magical formula to determine the right size or architecture of your model (in terms of the number of layers, or the right size for each layer). You will have to experiment using a series of different architectures.
+
+# Rule of thumb
+**To find an appropriate model size, it's best to start with relatively few layers and parameters, then begin increasing the size of the layers or adding new layers until you see diminishing returns on the validation loss.**
+
+Many models train better if you gradually reduce the learning rate during training. Use tf.keras.optimizers.schedules to reduce the learning rate over time:
+
+```{python learning_rate}
+lr_schedule = tf.keras.optimizers.schedules.InverseTimeDecay(
+  0.001,
+  decay_steps=STEPS_PER_EPOCH*1000,
+  decay_rate=1,
+  staircase=False)
+
+def get_optimizer():
+  return tf.keras.optimizers.Adam(lr_schedule)
+```
+The code above sets a tf.keras.optimizers.schedules.InverseTimeDecay to hyperbolically decrease the learning rate to 1/2 of the base rate at 1,000 epochs, 1/3 at 2,000 epochs, and so on.
+
+```{python vis_1}
+step = np.linspace(0,100000)
+lr = lr_schedule(step)
+plt.figure(figsize = (8,6))
+plt.plot(step/STEPS_PER_EPOCH, lr)
+plt.ylim([0,max(plt.ylim())])
+plt.xlabel('Epoch')
+_ = plt.ylabel('Learning Rate')
+```
+
+```{python model1}
+def get_callbacks(name):
+  return [
+    tfdocs.modeling.EpochDots(),
+    tf.keras.callbacks.EarlyStopping(monitor=  'val_binary_crossentropy', #<--this is original one, doesn't work. can not find in the model? only possibly 'val_loss','val_accuracy','loss', 'accuracy'
+    patience=100, mode='min'),
+    tf.keras.callbacks.TensorBoard(logdir/name),
+  ]
+
+def compile_and_fit(model, name, optimizer=None, max_epochs=10000):
+  if optimizer is None:
+    optimizer = get_optimizer()
+  model.compile(optimizer=optimizer,
+                loss=tf.keras.losses.BinaryCrossentropy(from_logits=True),
+                metrics=[
+                  tf.keras.metrics.BinaryCrossentropy(
+                      from_logits=True, name='binary_crossentropy'),
+                  'accuracy'])
+
+  model.summary()
+
+  history = model.fit(
+    train_ds_x, train_ds_y,
+    steps_per_epoch = STEPS_PER_EPOCH,
+    epochs=max_epochs,
+    validation_data=[validate_ds_x,validate_ds_y],
+    callbacks=get_callbacks(name),
+    verbose=0)
+  return history
+```  
+
+
+Tiny model
+
+```{python Tiny}
+from tensorflow.keras.layers import Flatten
+
+tiny_model = tf.keras.Sequential([
+    layers.Dense(16, activation='elu', input_shape=(FEATURES,)),
+    layers.Dense(1)#,
+    #tf.keras.layers.Lambda(lambda x: tf.squeeze(x, axis=-1))  # remove last dim
+])
+
+size_histories = {}
+
+size_histories['Tiny'] = compile_and_fit(tiny_model, 'sizes/Tiny')
+
+```
+
+Visualize
+
+```{python vis_small}
+
+plotter = tfdocs.plots.HistoryPlotter(metric = 'accuracy', smoothing_std=10)
+plotter.plot(size_histories)
+plt.ylim([0.5, 0.7])
+
+```

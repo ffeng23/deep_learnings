@@ -141,6 +141,15 @@ wheels = [
 ]
 
 [[package]]
+name = "astor"
+version = "0.8.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/5a/21/75b771132fee241dfe601d39ade629548a9626d1d39f333fde31bc46febe/astor-0.8.1.tar.gz", hash = "sha256:6a6effda93f4e1ce9f618779b2dd1d9d84f1e32812c23a29b3fff6fd7f63fa5e", size = 35090, upload-time = "2019-12-10T01:50:35.51Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/c3/88/97eef84f48fa04fbd6750e62dcceafba6c63c81b7ac1420856c8dcc0a3f9/astor-0.8.1-py2.py3-none-any.whl", hash = "sha256:070a54e890cefb5b3739d19f30f5a5ec840ffc9c50ffa7d23cc9fc1a38ebbfc5", size = 27488, upload-time = "2019-12-10T01:50:33.628Z" },
+]
+
+[[package]]
 name = "asttokens"
 version = "3.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -489,6 +498,7 @@ dependencies = [
     { name = "seaborn" },
     { name = "tensorflow", extra = ["and-cuda"] },
     { name = "tensorflow-datasets" },
+    { name = "tensorflow-docs" },
     { name = "tensorflow-hub" },
     { name = "tf-keras" },
 ]
@@ -502,6 +512,7 @@ requires-dist = [
     { name = "seaborn", specifier = ">=0.13.2" },
     { name = "tensorflow", extras = ["and-cuda"], specifier = ">=2.20.0" },
     { name = "tensorflow-datasets", specifier = ">=4.9.9" },
+    { name = "tensorflow-docs", specifier = ">=2025.2.19.33219" },
     { name = "tensorflow-hub", specifier = ">=0.16.1" },
     { name = "tf-keras", specifier = ">=2.20.1" },
 ]
@@ -3022,6 +3033,22 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/c9/92/a436764aeea5aa0c85774770afdc6063b1016dd38b67e39c5b6240cf1deb/tensorflow_datasets-4.9.9.tar.gz", hash = "sha256:9cb245cad97e7d227f0b8e006491cfef860ff8d4b9d84a3c68f8b96d6295355e", size = 3943946, upload-time = "2025-05-28T13:38:17.691Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/16/e0/657192dbc03636532ccbd5c90669d31a65187365b99ba685db36bb31dd67/tensorflow_datasets-4.9.9-py3-none-any.whl", hash = "sha256:b94902d414cdc12a1014cda9ee5815c502c3d44215b780e06dacbd7949abd14e", size = 5319309, upload-time = "2025-05-28T13:38:15.693Z" },
+]
+
+[[package]]
+name = "tensorflow-docs"
+version = "2025.2.19.33219"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "absl-py" },
+    { name = "astor" },
+    { name = "jinja2" },
+    { name = "nbformat" },
+    { name = "protobuf" },
+    { name = "pyyaml" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/48/9b/7fa61d2f7210838bcff2a9f4a363a363c1bc97bc9f48a74cb9059c2ba014/tensorflow_docs-2025.2.19.33219-py3-none-any.whl", hash = "sha256:b52682f3739110ce804af701f9ab5ac1efe07760109a5b5640769851d7d14b19", size = 182675, upload-time = "2025-02-20T02:32:55.821Z" },
 ]
 
 [[package]]
