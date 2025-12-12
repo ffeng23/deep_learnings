@@ -13,6 +13,8 @@ Ref:
 
 https://distill.pub/2021/gnn-intro/#graph-to-tensor
 
+pdf version in the repo is here at
+
 this is a very good intro to gnn!!! worth reading it twice.
 
 
@@ -23,3 +25,9 @@ Terminology:
 + MLP, multilayer perceptron, A multilayer perceptron (MLP) is a type of feedforward neural network that uses multiple layers of neurons to learn and make predictions on complex data. It consists of an input layer, one or more hidden layers, and an output layer, with each neuron in a layer fully connected to every neuron in the next layer. MLPs use activation functions, like ReLU or sigmoid, in the hidden layers to learn non-linear relationships, and are trained using a supervised learning method called backpropagation, which adjusts network weights to minimize errors.  
 
 + Back propagation, Backpropagation (Backward Propagation of Errors) is the core algorithm for training artificial neural networks, working backward from the output to adjust weights and biases to minimize prediction errors, using calculus (chain rule) and gradient descent for efficient, automated learning in deep learning models. It calculates how much each weight contributed to the error and then updates them to make better predictions, making deep learning models learn complex patterns from data.
+
+## GNN w/o message passing
+
+Simple GNN could have no communications between different components of the network and each nodes are taken care of by separate MLPs.
+
+MPNN are the ones with communications among different components.
