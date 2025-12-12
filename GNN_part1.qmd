@@ -13,7 +13,7 @@ Ref:
 
 https://distill.pub/2021/gnn-intro/#graph-to-tensor
 
-pdf version in the repo is here at
+pdf version in the repo is here at "./A Gentle Introduction to Graph Neural Networks.pdf".
 
 this is a very good intro to gnn!!! worth reading it twice.
 
