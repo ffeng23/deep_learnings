@@ -354,3 +354,369 @@ plotter.plot(size_histories)
 plt.ylim([0.5, 0.7])
 
 ```
+with metrics
+
+```{python vis_small2}
+
+plotter = tfdocs.plots.HistoryPlotter(metric = 'binary_crossentropy', smoothing_std=10)
+plotter.plot(size_histories)
+plt.ylim([0.5, 0.7])
+```
+
+## Small model
+
+Try two hidden layers with 16 units each:
+
+```{python small}
+small_model = tf.keras.Sequential([
+    # `input_shape` is only required here so that `.summary` works.
+    layers.Dense(16, activation='elu', input_shape=(FEATURES,)),
+    layers.Dense(16, activation='elu'),
+    layers.Dense(1)
+])
+
+size_histories['Small'] = compile_and_fit(small_model, 'sizes/Small')
+
+```
+
+## Medium model
+Now try three hidden layers with 64 units each:
+
+```{python medium}
+medium_model = tf.keras.Sequential([
+    layers.Dense(64, activation='elu', input_shape=(FEATURES,)),
+    layers.Dense(64, activation='elu'),
+    layers.Dense(64, activation='elu'),
+    layers.Dense(1)
+])
+#And train the model using the same data:
+
+
+size_histories['Medium']  = compile_and_fit(medium_model, "sizes/Medium")
+```
+
+## Large model
+
+As an exercise, you can create an even larger model and check how quickly it begins overfitting. Next, add to this benchmark a network that has much more capacity, far more than the problem would warrant:
+
+```{python large}
+large_model = tf.keras.Sequential([
+    layers.Dense(512, activation='elu', input_shape=(FEATURES,)),
+    layers.Dense(512, activation='elu'),
+    layers.Dense(512, activation='elu'),
+    layers.Dense(512, activation='elu'),
+    layers.Dense(1)
+])
+#And, again, train the model using the same data:
+
+
+size_histories['large'] = compile_and_fit(large_model, "sizes/large")
+```
+
+Now visualize all
+
+
+```{python vis_all}
+
+plotter.plot(size_histories)
+a = plt.xscale('log')
+plt.xlim([5, max(plt.xlim())])
+plt.ylim([0.5, 0.7])
+plt.xlabel("Epochs [Log Scale]")
+
+```
+
+As the visualization showed, medium and large models are quickly becoming overfitting with trainning loss/crossentropy keeping dropping but validation loss going bigger after some epoches.!!!!
+
+
+show on tensor board
+
+```{python tensorboard}
+
+# Load the TensorBoard notebook extension
+%load_ext tensorboard
+
+# Open an embedded TensorBoard viewer
+%tensorboard --logdir {logdir}/sizes
+
+```
+
+/|\ doesn't work here. might need to work on this before.!!!
+
+
+# Strategies to avoid overfitting.
+
+Before getting into the content of this section copy the training logs from the "Tiny" model above, to use as a baseline for comparison.
+
+```{python prepare}
+shutil.rmtree(logdir/'regularizers/Tiny', ignore_errors=True)
+shutil.copytree(logdir/'sizes/Tiny', logdir/'regularizers/Tiny')
+
+regularizer_histories = {}
+regularizer_histories['Tiny'] = size_histories['Tiny']
+
+```
+
+
+## Regularization
+
+In mathematics, statistics, finance,[1] and computer science, particularly in machine learning and inverse problems, regularization is a process that converts the answer to a problem to a simpler one. It is often used in solving ill-posed problems or to prevent overfitting.
+
+L1 and L2 regularization
+Adds penalty terms to the cost function to discourage complex models:
+
+L1 regularization (also called LASSO) leads to sparse models by adding a penalty based on the absolute value of coefficients.
+
+
+### Notes from the web searches about L1 and L2 regularization
+
+L1 regularization, also known as Lasso Regularization (Least Absolute Shrinkage and Selection Operator), is a technique used to prevent overfitting in machine learning models by adding a penalty to the model's loss function. This penalty is proportional to the absolute values of the coefficients of the model.
+
+Key Concepts
+
+L1 regularization modifies the loss function by adding a term that penalizes large coefficients. The updated loss function for a linear regression model becomes:
+
+$$
+ Loss = RSS + λ * Σ|βi|
+$$
+
+
+RSS is the Residual Sum of Squares (the original loss function).
+
+λ is the regularization parameter that controls the strength of the penalty.
+
+$β_i$ represents the coefficients of the model.
+
+The penalty term encourages the model to shrink some coefficients to exactly zero, effectively performing feature selection. This makes L1 regularization particularly useful when dealing with datasets that have a large number of features.
+
+Advantages
+
+Feature Selection: L1 regularization eliminates irrelevant features by setting their coefficients to zero, simplifying the model.
+
+Sparsity: It results in sparse models, which are easier to interpret and computationally efficient.
+
+Overfitting Prevention: By penalizing large coefficients, it reduces the model's variance and prevents overfitting.
+
+Limitations
+
+Multicollinearity: When features are highly correlated, L1 regularization may arbitrarily select one feature over another, which can affect model interpretability.
+
+Bias: L1 regularization may introduce bias into the model, especially when the true relationship between features and the target variable is complex.
+
+Practical Use Case
+
+L1 regularization is ideal for scenarios where:
+
+The dataset has a large number of features, many of which may be irrelevant.
+
+Feature selection is desired as part of the modeling process.
+
+For example, in a high-dimensional dataset with thousands of features, L1 regularization can automatically identify and retain only the most important predictors.
+
+Implementation in Python
+
+L1 regularization can be implemented using libraries like scikit-learn. Here's an example using Lasso regression:
+
+
+    from sklearn.linear_model import Lasso
+    from sklearn.model_selection import train_test_split
+    from sklearn.datasets import make_regression
+
+    # Generate a synthetic dataset
+    X, y = make_regression(n_samples=100, n_features=20, noise=0.1, random_state=42)
+
+    # Split the dataset into training and testing sets
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+
+    # Apply Lasso regression with L1 regularization
+    lasso = Lasso(alpha=0.1) # alpha is the regularization parameter (λ)
+    lasso.fit(X_train, y_train)
+
+    # Print the coefficients
+    print("Coefficients:", lasso.coef_)
+
+    # Evaluate the model
+    print("Training Score:", lasso.score(X_train, y_train))
+    print("Testing Score:", lasso.score(X_test, y_test))
+
+
+In this example, the alpha parameter controls the strength of the L1 penalty. A higher value of alpha increases regularization, leading to more coefficients being set to zero.
+
+Important Considerations
+
+While L1 regularization is powerful, it is essential to tune the regularization parameter (λ or alpha) to balance bias and variance. Cross-validation is commonly used to find the optimal value. Additionally, for datasets with highly correlated features, combining L1 and L2 regularization (Elastic Net) may yield better results.
+
+
+
+L2 regularization (also called ridge regression) encourages smaller, more evenly distributed weights by adding a penalty based on the square of the coefficients.[4]
+
+L2 regularization, also known as Ridge regularization, is a technique used in machine learning to prevent overfitting by adding a penalty term to the loss function, which is proportional to the square of the magnitude of the model's coefficients.
+Definition and Purpose
+L2 regularization is a method used to reduce the complexity of a model by discouraging large weights. It adds a penalty term to the loss function, which is calculated as the sum of the squares of the model's coefficients. This encourages the model to keep the weights small, thus improving its generalization ability on unseen data and reducing the risk of overfitting. 
+Google
++1
+Mathematical Formulation
+The L2-regularized loss function can be expressed as:
+
+$$
+   L_{reg}(\theta) = L(\theta) + \lambda \sum_{i=1}^{n} w_i^2
+$$
+Where:
+$L(\theta)$ is the original loss function (e.g., mean squared error).
+
+$w_i$ represents the model's coefficients (weights).
+
+$\lambda$ is the regularization strength, a hyperparameter that controls the trade-off between fitting the training data and keeping the weights small. 
+
+Benefits of L2 Regularization
+
++ Prevents Overfitting: By penalizing large weights, L2 regularization helps to prevent the model from fitting noise in the training data, leading to better performance on new data. 
+
++ Improves Generalization: Models with smaller weights are more likely to generalize well, as they are less sensitive to fluctuations in the training data. 
+
+
++ Handles Multicollinearity: L2 regularization can effectively manage multicollinearity by shrinking the coefficients of correlated features rather than eliminating them. 
+
+
+Applications
+L2 regularization is widely used in various machine learning contexts, including:
+Linear Regression: To prevent overfitting in linear models.
+Logistic Regression: To enhance the generalizability of classification models.
+Neural Networks: To regularize the weights and improve model robustness. 
+
+In summary, L2 regularization is a crucial technique in machine learning that helps create simpler, more generalizable models by adding a penalty for large coefficients, thus improving performance on unseen data.
+
+
+### notes from tf keras tutorial
+
+Add weight regularization
+You may be familiar with Occam's Razor principle: given two explanations for something, the explanation most likely to be correct is the "simplest" one, the one that makes the least amount of assumptions. This also applies to the models learned by neural networks: given some training data and a network architecture, there are multiple sets of weights values (multiple models) that could explain the data, and simpler models are less likely to overfit than complex ones.
+
+A "simple model" in this context is a model where the distribution of parameter values has less entropy (or a model with fewer parameters altogether, as demonstrated in the section above). Thus a common way to mitigate overfitting is to put constraints on the complexity of a network by forcing its weights only to take small values, which makes the distribution of weight values more "regular". This is called "weight regularization", and it is done by adding to the loss function of the network a cost associated with having large weights. This cost comes in two flavors:
+
+L1 regularization, where the cost added is proportional to the absolute value of the weights coefficients (i.e. to what is called the "L1 norm" of the weights).
+
+L2 regularization, where the cost added is proportional to the square of the value of the weights coefficients (i.e. to what is called the squared "L2 norm" of the weights). L2 regularization is also called weight decay in the context of neural networks. Don't let the different name confuse you: weight decay is mathematically the exact same as L2 regularization.
+
+L1 regularization pushes weights towards exactly zero, encouraging a sparse model. L2 regularization will penalize the weights parameters without making them sparse since the penalty goes to zero for small weights—one reason why L2 is more common.
+
+**(Feng's notes: L1 push weights to zero, because it penalize the large weights smaller and smaller weights even smaller (meaning to zero), because the penalization is linear.but for L2 regularization, it pushes large weights, but because of squareness, it penalize the big ones more severe, but small one more lenient, so it keep small weights and penalize mainly the bigger ones.!!! don't create sparse matrix.)**
+
+In tf.keras, weight regularization is added by passing weight regularizer instances to layers as keyword arguments. Add L2 weight regularization:
+
+```{python regularization}
+l2_model = tf.keras.Sequential([
+    layers.Dense(512, activation='elu',
+                 kernel_regularizer=regularizers.l2(0.001),
+                 input_shape=(FEATURES,)),
+    layers.Dense(512, activation='elu',
+                 kernel_regularizer=regularizers.l2(0.001)),
+    layers.Dense(512, activation='elu',
+                 kernel_regularizer=regularizers.l2(0.001)),
+    layers.Dense(512, activation='elu',
+                 kernel_regularizer=regularizers.l2(0.001)),
+    layers.Dense(1)
+])
+
+regularizer_histories['l2'] = compile_and_fit(l2_model, "regularizers/l2")
+
+```
+
+l2(0.001) means that every coefficient in the weight matrix of the layer will add 0.001 * weight_coefficient_value**2 to the total loss of the network.
+
+That is why we're monitoring the binary_crossentropy directly. Because it doesn't have this regularization component mixed in.
+
+So, that same "Large" model with an L2 regularization penalty performs much better:
+
+```{python reg2}
+plotter.plot(regularizer_histories)
+plt.ylim([0.5, 0.7])
+plt.xlim([0,500])
+
+```
+
+**More info**
+about customization!!
+
+There are two important things to note about this sort of regularization:
+
+If you are writing your own training loop, then you need to be sure to ask the model for its regularization losses.
+```{python call_loss}
+result = l2_model(features)
+regularization_loss=tf.add_n(l2_model.losses)
+```
+This implementation works by adding the weight penalties to the model's loss, and then applying a standard optimization procedure after that.
+There is a second approach that instead only runs the optimizer on the raw loss, and then while applying the calculated step the optimizer also applies some weight decay. This "decoupled weight decay" is used in optimizers like tf.keras.optimizers.Ftrl and tfa.optimizers.AdamW.
+
+# Drop out
+
+Add dropout
+Dropout is one of the most effective and most commonly used regularization techniques for neural networks, developed by Hinton and his students at the University of Toronto.
+
+The intuitive explanation for dropout is that because individual nodes in the network cannot rely on the output of the others, each node must output features that are useful on their own.
+
+Dropout, applied to a layer, consists of randomly "dropping out" (i.e. set to zero) a number of output features of the layer during training. For example, a given layer would normally have returned a vector [0.2, 0.5, 1.3, 0.8, 1.1] for a given input sample during training; after applying dropout, this vector will have a few zero entries distributed at random, e.g. [0, 0.5, 1.3, 0, 1.1].
+
+The "dropout rate" is the fraction of the features that are being zeroed-out; it is usually set between 0.2 and 0.5. At test time, no units are dropped out, and instead the layer's output values are scaled down by a factor equal to the dropout rate, so as to balance for the fact that more units are active than at training time.
+
+In Keras, you can introduce dropout in a network via the tf.keras.layers.Dropout layer, which gets applied to the output of layer right before.
+
+Add two dropout layers to your network to check how well they do at reducing overfitting:
+
+```{python drop_out1}
+dropout_model = tf.keras.Sequential([
+    layers.Dense(512, activation='elu', input_shape=(FEATURES,)),
+    layers.Dropout(0.5),
+    layers.Dense(512, activation='elu'),
+    layers.Dropout(0.5),
+    layers.Dense(512, activation='elu'),
+    layers.Dropout(0.5),
+    layers.Dense(512, activation='elu'),
+    layers.Dropout(0.5),
+    layers.Dense(1)
+])
+
+regularizer_histories['dropout'] = compile_and_fit(dropout_model, "regularizers/dropout")
+
+plotter.plot(regularizer_histories)
+plt.ylim([0.5, 0.7])
+```
+
+Combined L2 + dropout
+
+```{python combined}
+combined_model = tf.keras.Sequential([
+    layers.Dense(512, kernel_regularizer=regularizers.l2(0.0001),
+                 activation='elu', input_shape=(FEATURES,)),
+    layers.Dropout(0.5),
+    layers.Dense(512, kernel_regularizer=regularizers.l2(0.0001),
+                 activation='elu'),
+    layers.Dropout(0.5),
+    layers.Dense(512, kernel_regularizer=regularizers.l2(0.0001),
+                 activation='elu'),
+    layers.Dropout(0.5),
+    layers.Dense(512, kernel_regularizer=regularizers.l2(0.0001),
+                 activation='elu'),
+    layers.Dropout(0.5),
+    layers.Dense(1)
+])
+
+regularizer_histories['combined'] = compile_and_fit(combined_model, "regularizers/combined")
+
+plotter.plot(regularizer_histories)
+plt.ylim([0.5, 0.7])
+
+```
+
+Conclusions
+To recap, here are the most common ways to prevent overfitting in neural networks:
+
+Get more training data.
+Reduce the capacity of the network.
+Add weight regularization.
+Add dropout.
+Two important approaches not covered in this guide are:
+
+Data augmentation
+Batch normalization (tf.keras.layers.BatchNormalization)
+Remember that each method can help on its own, but often combining them can be even more effective.

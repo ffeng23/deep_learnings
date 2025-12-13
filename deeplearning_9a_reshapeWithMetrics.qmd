@@ -368,3 +368,46 @@ plotter.plot(size_histories)
 plt.ylim([0.5, 0.7])
 
 ```
+
+## Make a new model
+
+Suppose we want to make a new model out of an old model with new layers or change output layers. Here is what we can do.
+
+First, we can specify the input and out and make a new model
+
+**note: this way only works for tf.keras.Model, meaning a complicated model.** For simple sequential model, we can do model.add(layers). see below.
+
+ref: https://stackoverflow.com/questions/63053427/keras-add-layers-to-another-model
+
+```{python new_model}
+
+#first make a input layer
+input_new=tf.keras.layers.Input(shape=(28,))
+
+
+
+flatten_layer_new=tf.keras.layers.Dense(16)(input_new)
+
+new_model=tf.keras.Model(input_new, flatten_layer_new)
+
+new_model.summary()
+
+sqz=tf.keras.layers.Flatten()(new_model.output)
+
+#or
+#sqz=tf.keras.layers.Flatten()(new_model.layers[-1].output)
+new_model2= tf.keras.Model(new_model.inputs,sqz)
+new_model2.summary()
+
+```
+
+Second, we can add to the old **Sequential** model by model.add()
+
+**only**(?) for simple sequential model.
+```{python new_model2}
+
+tiny_model.add(tf.keras.layers.Lambda(lambda x: tf.squeeze(x, axis=-1)))
+
+tiny_model.summary()
+
+```
