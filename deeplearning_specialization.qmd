@@ -252,6 +252,13 @@ where
   - $y_{i,j}$ is 1 if class j is correct for sample i, 0 otherwise.
   - $p_{i,j}$ is model-predicted probability of sample i being in class j.
 
+#### Why cross entropy loss vs mse loss
+
++ it makes bigger the gradient for confident wrong predictions and therefore fast learning
+
++ it makes the loss curve/surface smoother and less likely to be stuck on local minimum.
+ 
+
 ### entropy
 
 In information theory, the entropy of a random variable quantifies the average level of uncertainty or information associated with the variable's potential states or possible outcomes. This measures the expected amount of information needed to describe the state of the variable, considering the distribution of probabilities across all potential states. Given a discrete random variable 
